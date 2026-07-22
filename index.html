@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Big Data Analysis — Class Test 1 study guide: Distributed File Systems (GFS &amp; HDFS). Diagrams, facts, and self-test for a perfect score.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>%F0%9F%90%98</text></svg>">
+<title>GFS &amp; HDFS — BDA Test 1 Study Guide</title>
+<style>
+  :root{
+    --bg:#0e1016; --bg2:#12151d; --panel:#181b24; --panel2:#1f2330; --ink:#e7e9ee; --muted:#9aa3b2;
+    --accent:#5b9dff; --accent2:#38d39f; --warn:#ffb454; --line:#2a2f3d; --star:#c792ea; --th:#232838;
+    --shadow:0 6px 24px rgba(0,0,0,.35);
+  }
+  html[data-theme="light"]{
+    --bg:#f5f7fb; --bg2:#eef1f7; --panel:#ffffff; --panel2:#f0f3f8; --ink:#161a22; --muted:#5a6472;
+    --accent:#2563eb; --accent2:#0f9d75; --warn:#b5730d; --line:#e2e6ee; --star:#7c3aed; --th:#eef1f7;
+    --shadow:0 6px 22px rgba(20,30,60,.08);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 18px}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+
+  /* progress bar */
+  #progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));z-index:100;transition:width .1s ease-out}
+
+  /* top bar */
+  .topbar{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 88%,transparent);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topbar .row{display:flex;align-items:center;gap:12px;padding:9px 0}
+  .brand{font-weight:800;font-size:14px;white-space:nowrap}
+  .brand .dot{color:var(--accent)}
+  .navchips{display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:thin;padding-bottom:2px}
+  .navchips::-webkit-scrollbar{height:5px} .navchips::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .navchips a{color:var(--muted);font-size:12.5px;padding:5px 10px;border-radius:999px;white-space:nowrap;border:1px solid transparent}
+  .navchips a:hover,.navchips a.active{color:var(--accent);background:var(--panel2);border-color:var(--line);text-decoration:none}
+  .iconbtn{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:9px;
+    padding:7px 10px;font-size:13px;cursor:pointer;line-height:1;white-space:nowrap}
+  .iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* hero */
+  header.hero{background:radial-gradient(120% 140% at 0% 0%,#22305200,#0e1016 60%),linear-gradient(135deg,#1e2a49,#12151d);
+    border:1px solid var(--line);border-radius:16px;padding:26px 26px;margin:18px 0 6px;box-shadow:var(--shadow)}
+  html[data-theme="light"] header.hero{background:linear-gradient(135deg,#e9f0ff,#f7f9ff)}
+  header.hero h1{margin:0 0 6px;font-size:clamp(20px,3.4vw,30px);line-height:1.15}
+  .pill{display:inline-block;font-weight:700;font-size:11px;padding:4px 10px;border-radius:999px;margin:6px 6px 0 0}
+  .p-red{background:var(--warn);color:#1a1d24} .p-blue{background:var(--accent);color:#fff} .p-grn{background:var(--accent2);color:#06281f}
+  .src{color:var(--muted);font-size:12.5px;margin-top:10px;max-width:70ch}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 6px}
+  .btn{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:8px 13px;font-size:12.5px;cursor:pointer}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)} .btn.primary:hover{filter:brightness(1.08);color:#fff}
+
+  h2{font-size:15px;letter-spacing:.03em;margin:30px 0 12px;padding:8px 13px;background:var(--panel2);
+    border-left:4px solid var(--accent);border-radius:7px;text-transform:uppercase;scroll-margin-top:64px}
+  h2 .em{color:var(--accent)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px 17px;box-shadow:var(--shadow)}
+  .card h3{margin:0 0 9px;font-size:14px;color:var(--accent2);display:flex;align-items:center;gap:7px}
+  .card.blue h3{color:var(--accent)} .card.warn h3{color:var(--warn)} .card.star h3{color:var(--star)}
+  ul{margin:6px 0;padding-left:19px} li{margin:4px 0} p{margin:7px 0}
+  code{background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  b,strong{color:var(--ink);font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:5px 0}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:var(--th);font-weight:700} tr:nth-child(even) td{background:var(--panel2)}
+  .num td:last-child{font-weight:700;color:var(--accent);white-space:nowrap}
+
+  .must{counter-reset:m;display:grid;grid-template-columns:1fr 1fr;gap:9px;list-style:none;padding:0;margin:0}
+  .must li{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 13px 10px 42px;position:relative;box-shadow:var(--shadow)}
+  .must li::before{counter-increment:m;content:counter(m);position:absolute;left:11px;top:10px;width:23px;height:23px;
+    background:var(--accent);color:#fff;border-radius:50%;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+  .diagram{background:#ffffff;border:1px solid #d7dce6;border-radius:13px;padding:13px;box-shadow:var(--shadow)}
+  .diagram svg{width:100%;height:auto;display:block}
+  .say{font-size:12.5px;color:var(--muted);margin:9px 3px 0;border-left:3px solid var(--accent2);padding-left:10px}
+  .say b{color:var(--ink)}
+
+  details{background:var(--panel);border:1px solid var(--line);border-radius:11px;margin:8px 0;padding:0 15px;box-shadow:var(--shadow)}
+  summary{cursor:pointer;font-weight:600;padding:11px 0;list-style:none;font-size:13.5px;display:flex;gap:8px;align-items:baseline}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";color:var(--accent);transition:transform .15s} details[open] summary::before{content:"▾"}
+  .a{padding:0 0 13px;font-size:13px;color:var(--ink)}
+  .qid{color:var(--accent);font-weight:800;flex:none}
+
+  .note{background:color-mix(in srgb,var(--accent2) 12%,transparent);border:1px solid var(--accent2);border-radius:10px;padding:10px 13px;margin:9px 0;font-size:13px}
+  .warnbox{background:color-mix(in srgb,var(--warn) 14%,transparent);border:1px solid var(--warn);border-radius:10px;padding:10px 13px;margin:9px 0;font-size:13px}
+
+  /* back to top */
+  #toTop{position:fixed;right:18px;bottom:18px;z-index:50;width:44px;height:44px;border-radius:50%;
+    background:var(--accent);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:var(--shadow);
+    opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;transform:translateY(8px)}
+  #toTop.show{opacity:1;pointer-events:auto;transform:none}
+
+  footer{color:var(--muted);font-size:12.5px;text-align:center;padding:22px 0 60px;margin-top:20px;border-top:1px solid var(--line)}
+
+  @media (max-width:760px){
+    .grid,.grid3,.must{grid-template-columns:1fr}
+    .brand{display:none}
+    header.hero{padding:20px 18px}
+    .diagram{padding:9px}
+    /* wide tables scroll inside their card instead of overflowing the page */
+    table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:normal}
+  }
+  @media print{
+    #progress,.topbar,.toolbar,#toTop{display:none!important}
+    :root,html[data-theme]{--bg:#fff;--bg2:#fff;--panel:#fff;--panel2:#fff;--ink:#000;--muted:#333;--line:#bbb;--th:#eee;--shadow:none}
+    .a{display:block!important} details{border:1px solid #ccc}
+    .card,.diagram,details,.must li,section,header.hero{break-inside:avoid;box-shadow:none}
+    h2{background:#eee}
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<div class="topbar">
+  <div class="wrap row">
+    <span class="brand">GFS<span class="dot">·</span>HDFS</span>
+    <div class="navchips" id="nav">
+      <a href="#must">Must-knows</a>
+      <a href="#why">Why HDFS</a>
+      <a href="#gfs">GFS</a>
+      <a href="#arch">HDFS</a>
+      <a href="#draw">Diagrams</a>
+      <a href="#repl">Replication</a>
+      <a href="#paths">Read/Write</a>
+      <a href="#ha">HA</a>
+      <a href="#limits">Limits</a>
+      <a href="#cloud">Cloud</a>
+      <a href="#numbers">Numbers</a>
+      <a href="#glossary">Glossary</a>
+      <a href="#qa">Self-test</a>
+    </div>
+    <button class="iconbtn" id="themeBtn" title="Toggle light/dark" aria-label="Toggle theme">🌙</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <h1>🐘 Distributed File Systems: GFS &amp; HDFS</h1>
+    <div>
+      <span class="pill p-red">Class Test 1 · Sat 25 Jul 2026</span>
+      <span class="pill p-blue">Chapter 3 · Slides W03 P1 + P2</span>
+      <span class="pill p-grn">Everything for 100%</span>
+    </div>
+    <p class="src">Study guide for Big Data Analysis, condensed from Rokan Uddin Faruqui, <em>Data Engineering:
+    Distributed Systems, Scalable Processing, and Modern Architectures</em> (2026, CC BY 4.0), Chapter 3.
+    The five diagrams are drawable — practise reproducing each from memory.</p>
+    <div class="toolbar">
+      <button class="btn primary" onclick="window.print()">🖨️ Save as PDF</button>
+      <button class="btn" onclick="setAll(true)">Show all answers</button>
+      <button class="btn" onclick="setAll(false)">Hide all answers</button>
+    </div>
+  </header>
+
+  <!-- LEARNING OBJECTIVES -->
+  <details style="margin-top:14px">
+    <summary>🎯 Learning objectives (what the chapter says you must be able to do)</summary>
+    <div class="a">
+      <ol style="margin:4px 0">
+        <li>Explain why conventional file systems (NFS, POSIX, SAN) can't meet petabyte-scale needs.</li>
+        <li>Describe the GFS architecture (master, chunkservers, clients, chunk size, metadata) and its key design decisions.</li>
+        <li>Draw &amp; explain the HDFS architecture: NameNode, DataNodes, Secondary NameNode.</li>
+        <li>Trace the full HDFS read and write paths (pipeline replication, checksums, leases).</li>
+        <li>Explain rack-aware replication and the default 3-replica policy.</li>
+        <li>Describe NameNode HA: Active/Standby, ZooKeeper election, Journal Nodes.</li>
+        <li>Identify HDFS limits (small files, no random writes, latency) and contrast with cloud object stores.</li>
+      </ol>
+    </div>
+  </details>
+
+  <!-- MUST-KNOWS -->
+  <h2 id="must">⚡ <span class="em">The 10 must-knows</span> — memorise first</h2>
+  <ol class="must">
+    <li><b>GFS 2003 → HDFS 2006.</b> HDFS = open-source GFS in Java. master→<b>NameNode</b>, chunk→<b>block</b>, chunkserver→<b>DataNode</b>.</li>
+    <li><b>NameNode</b> = brain. Metadata (namespace + block→DN map) in <b>RAM</b>. On disk as <b>FsImage</b> (snapshot) + <b>EditLog</b> (WAL).</li>
+    <li><b>DataNode</b> = stores block bytes. Sends <b>heartbeat (3 s)</b> + <b>block report (6 h)</b>.</li>
+    <li><b>Block = 128 MB</b>, <b>replication = 3</b>. Last block not padded → <b>1 GB = 8 blocks</b>.</li>
+    <li><b>Control plane vs data plane:</b> NameNode gives locations only; <b>data flows client↔DataNode directly</b>, never through the NameNode.</li>
+    <li><b>Secondary NameNode ≠ standby.</b> It only <b>checkpoints</b> (merges EditLog→FsImage).</li>
+    <li><b>Rack-aware (RF3):</b> R1 local, R2 other rack, R3 same rack as R2 → survives any 1 rack failure.</li>
+    <li><b>Write pipeline:</b> <code>client→DN1→DN2→DN3</code>, ACKs reverse. <b>Read:</b> ask NN → read DN direct.</li>
+    <li><b>HA</b> kills the SPOF: <b>Active + Standby</b> NameNodes + <b>Journal Nodes</b> + <b>ZooKeeper/ZKFC</b> + <b>fencing</b>.</li>
+    <li><b>4 limits:</b> small-file problem (150 B/file heap), no random writes, high latency (50–200 ms), NameNode SPOF.</li>
+  </ol>
+
+  <!-- WHY -->
+  <h2 id="why">📉 Why conventional file systems fail at petabyte scale <span style="opacity:.6;font-size:12px">(§3.1)</span></h2>
+  <div class="grid">
+    <div class="card">
+      <h3>The 3 breaking points</h3>
+      <ul>
+        <li><b>Single-machine capacity</b> — NFS/SAN lean on a finite set of controllers; one host can't hold PBs. Must spread across a cluster.</li>
+        <li><b>Throughput</b> — 1 disk ≈ 50 MB/s → reading <b>1 PB from one disk = ~230 days</b>. Across 1,000 disks in parallel → <b>~5 hours</b>.</li>
+        <li><b>Failure is normal</b> — a few-thousand-node cluster sees <b>~3 node failures/day</b>. A system that treats failure as exceptional spends most of its time recovering. Design for failure as the <b>expected case</b>.</li>
+      </ul>
+      <div class="note"><b>Data-locality idea (Ch.1 callback):</b> move <b>computation to the data</b>, not data to the computation — the founding principle behind both GFS and HDFS.</div>
+    </div>
+    <div class="card">
+      <h3>Storage architectures compared (Table 3.1)</h3>
+      <table>
+        <tr><th>System</th><th>Why it fails at big-data scale</th></tr>
+        <tr><td>POSIX / local FS</td><td>Single-disk SPOF; no horizontal scaling</td></tr>
+        <tr><td>NFS</td><td>NAS head = SPOF + metadata/I-O bottleneck</td></tr>
+        <tr><td>SAN</td><td>Proprietary HW; cost per PB prohibitive</td></tr>
+        <tr><td>RDBMS blob</td><td>Tuned for random access, not sequential scan</td></tr>
+        <tr><td><b>GFS / HDFS</b></td><td><b>Designed for exactly this workload ✅</b></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- GFS -->
+  <h2 id="gfs">🔵 The Google File System <span style="opacity:.6;font-size:12px">(§3.2)</span></h2>
+  <p>Published by <b>Ghemawat, Gobioff &amp; Leung, SOSP 2003</b> — one of the most-cited systems papers ever
+  (14,000+ citations). Purpose-built for Google's workload; deliberately <b>not POSIX-compliant</b>. Its
+  central bet: <b>workload-specific design beats general-purpose design at extreme scale.</b></p>
+  <div class="note"><b>Workload GFS was built for:</b> files are <b>huge</b> (GB–hundreds of GB) · access is
+  <b>sequential reads + sequential appends</b> · random writes essentially <b>absent</b> · <b>write-once,
+  read-many</b> · many concurrent readers, not concurrent random writers.</div>
+  <div class="grid">
+    <div class="card blue">
+      <h3>The 6 GFS design decisions ★</h3>
+      <ol>
+        <li><b>Large chunk size (64 MB)</b> — vs 4 KB blocks → far less metadata, less client↔master chatter, direct TCP streaming.</li>
+        <li><b>Centralised in-memory metadata</b> — master holds namespace, chunk→file map, locations, ACLs in <b>RAM</b>; <b>1 PB ≈ 16M chunk entries</b> fits.</li>
+        <li><b>No data caching</b> — streaming reads would evict cache before reuse; rely on OS buffer cache.</li>
+        <li><b>Write-by-append</b> — optimised for <b>atomic append</b> (logs, crawl output, index segments).</li>
+        <li><b>Replication, not RAID</b> — 3 chunkservers/chunk; master re-replicates on failure.</li>
+        <li><b>Relaxed consistency</b> — weaker than POSIX; concurrent writes can be "defined but inconsistent"; apps cope with unique IDs + read-time dedup.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>GFS architecture — 3 components</h3>
+      <ul>
+        <li><b>1 GFS master</b> — all metadata in RAM; <b>control plane only</b>, never touches data bytes.</li>
+        <li><b>Chunkservers</b> — store chunks as plain Linux files; verify <b>checksums</b> on every read; no memory cache.</li>
+        <li><b>Clients</b> — GFS API (not POSIX); ask master for chunk handles + locations, then talk <b>directly</b> to chunkservers; cache locations briefly.</li>
+      </ul>
+      <p><b>Master ↔ chunkserver:</b> <b>heartbeat</b> (every few sec) + <b>chunk report</b> (which replicas held → rebuild map after restart).</p>
+      <div class="note"><b>The one big idea:</b> separate the <b>control plane</b> (master/metadata) from the <b>data plane</b> (direct client↔chunkserver transfer) — so one master is never the bottleneck.</div>
+    </div>
+  </div>
+
+  <!-- HDFS ARCH -->
+  <h2 id="arch">🟢 HDFS architecture <span style="opacity:.6;font-size:12px">(§3.3)</span></h2>
+  <p>Open-source Apache reimplementation of GFS in Java. Built at Yahoo! by <b>Doug Cutting &amp; Mike
+  Cafarella</b> (from the Nutch crawler), donated to Apache in <b>2006</b>. Renames only:
+  master→<b>NameNode</b>, chunkserver→<b>DataNode</b>, chunk→<b>block</b>.</p>
+  <div class="grid">
+    <div class="card blue">
+      <h3>NameNode — the master / "index"</h3>
+      <p>All metadata in <b>RAM</b> (~<b>150 B/file</b> + <b>150 B/block</b>; 1M files ≈ 300 MB heap). Two on-disk structures:</p>
+      <ul>
+        <li><b>FsImage</b> — full point-in-time <b>snapshot</b> of the namespace.</li>
+        <li><b>EditLog</b> — <b>write-ahead log</b> of every mutation since the last checkpoint.</li>
+      </ul>
+      <p><b>Startup:</b> replay EditLog onto last FsImage → current state. <b>Checkpointing</b> merges them so EditLog never grows forever.</p>
+      <div class="warnbox">⚠️ <b>Block locations are NOT persisted</b> — they're rebuilt at startup from <b>DataNode block reports</b>, avoiding stale-location bugs after failures.</div>
+      <p><b>5 responsibilities ★:</b> namespace · block mgmt (+re-replication) · access control · lease mgmt (who may write) · load balancing (Balancer).</p>
+    </div>
+    <div class="card">
+      <h3>DataNode · Secondary NN · Blocks</h3>
+      <p><b>DataNode</b> — stores block bytes on local disks; serves reads/writes <b>direct</b> to clients. Commodity HW (2024: 12–24 disks × 8–18 TB). Sends:</p>
+      <ul>
+        <li><b>Heartbeat</b> (3 s) — "alive"; miss <b>&gt;10.5 min</b> → marked <b>dead</b> → re-replication.</li>
+        <li><b>Block report</b> (6 h / on startup) — full replica list.</li>
+        <li><b>Block scanning</b> (~3 wk) — checksum every block; corrupt → re-replicate from a good copy.</li>
+      </ul>
+      <div class="warnbox">⚠️ <b>Secondary NameNode ≠ standby.</b> It only <b>checkpoints</b> (EditLog→FsImage) to shorten restart. Failover needs HA. Runs <b>hourly</b> or every <b>1M</b> EditLog txns.</div>
+      <p><b>Blocks:</b> default <b>128 MB</b> (was 64 MB), stored <b>3×</b>. Last block not padded → <b>1 GB = 8 blocks, not 9</b>.</p>
+    </div>
+  </div>
+
+  <!-- DIAGRAMS -->
+  <h2 id="draw">✏️ <span class="em">Diagrams to draw</span> — the biggest marks</h2>
+
+  <div class="grid">
+    <div>
+      <div class="diagram">
+        <svg viewBox="0 0 460 300" font-family="Segoe UI, Arial" font-size="12" role="img" aria-label="HDFS cluster architecture">
+          <defs><marker id="a1" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#334"/></marker></defs>
+          <text x="230" y="16" text-anchor="middle" font-weight="700" font-size="13" fill="#222">HDFS Cluster Architecture (Fig 3.1)</text>
+          <rect x="20" y="30" width="230" height="70" rx="7" fill="#e8f0ff" stroke="#2563eb"/>
+          <text x="135" y="48" text-anchor="middle" font-weight="700" fill="#1d4ed8">NameNode (master)</text>
+          <rect x="35" y="56" width="90" height="30" rx="4" fill="#fff" stroke="#2563eb"/><text x="80" y="75" text-anchor="middle" fill="#1d4ed8">FsImage</text>
+          <rect x="145" y="56" width="90" height="30" rx="4" fill="#fff" stroke="#2563eb"/><text x="190" y="75" text-anchor="middle" fill="#1d4ed8">EditLog</text>
+          <rect x="290" y="34" width="150" height="46" rx="7" fill="#f3ecff" stroke="#7c3aed"/>
+          <text x="365" y="52" text-anchor="middle" font-weight="700" fill="#6d28d9" font-size="11">Secondary NN</text>
+          <text x="365" y="68" text-anchor="middle" fill="#6d28d9" font-size="10">checkpoint EditLog→FsImage</text>
+          <path d="M250,60 L288,58" stroke="#7c3aed" stroke-dasharray="4 3" fill="none" marker-end="url(#a1)"/>
+          <rect x="300" y="150" width="140" height="40" rx="7" fill="#fff4e0" stroke="#b5730d"/>
+          <text x="370" y="175" text-anchor="middle" font-weight="700" fill="#b5730d">Client</text>
+          <rect x="20" y="235" width="120" height="52" rx="7" fill="#e4f8ef" stroke="#0f9d75"/>
+          <text x="80" y="255" text-anchor="middle" font-weight="700" fill="#0f7a5c" font-size="11">DataNode 1</text><text x="80" y="270" text-anchor="middle" fill="#0f7a5c" font-size="10">Rack A · blocks</text>
+          <rect x="150" y="235" width="120" height="52" rx="7" fill="#e4f8ef" stroke="#0f9d75"/>
+          <text x="210" y="255" text-anchor="middle" font-weight="700" fill="#0f7a5c" font-size="11">DataNode 2</text><text x="210" y="270" text-anchor="middle" fill="#0f7a5c" font-size="10">Rack B · blocks</text>
+          <rect x="280" y="235" width="120" height="52" rx="7" fill="#e4f8ef" stroke="#0f9d75"/>
+          <text x="340" y="255" text-anchor="middle" font-weight="700" fill="#0f7a5c" font-size="11">DataNode 3</text><text x="340" y="270" text-anchor="middle" fill="#0f7a5c" font-size="10">Rack B · blocks</text>
+          <path d="M300,168 L252,102" stroke="#334" fill="none" marker-end="url(#a1)"/>
+          <text x="243" y="150" fill="#334" font-size="10">① locations (RPC)</text>
+          <path d="M300,182 L342,233" stroke="#334" fill="none" marker-end="url(#a1)"/>
+          <text x="352" y="215" fill="#334" font-size="10">② data (TCP)</text>
+          <path d="M80,233 L120,102" stroke="#0f9d75" fill="none" stroke-dasharray="3 3" marker-end="url(#a1)"/>
+          <text x="18" y="172" fill="#0f7a5c" font-size="10">heartbeat +</text><text x="18" y="184" fill="#0f7a5c" font-size="10">block report</text>
+        </svg>
+      </div>
+      <p class="say"><b>Say:</b> NameNode holds metadata in RAM (FsImage+EditLog); Secondary NN only checkpoints; client gets <b>locations</b> from NN (①), then moves <b>data direct to DataNodes</b> (②). NN <b>never touches block data</b>; DNs report via heartbeat + block report.</p>
+    </div>
+
+    <div>
+      <div class="diagram">
+        <svg viewBox="0 0 460 300" font-family="Segoe UI, Arial" font-size="12" role="img" aria-label="HDFS write pipeline">
+          <defs><marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0f7a5c"/></marker>
+                 <marker id="a2b" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#b5730d"/></marker>
+                 <marker id="a2c" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#334"/></marker></defs>
+          <text x="230" y="16" text-anchor="middle" font-weight="700" font-size="13" fill="#222">Write Pipeline (Fig 3.4)</text>
+          <rect x="150" y="30" width="160" height="34" rx="7" fill="#e8f0ff" stroke="#2563eb"/>
+          <text x="230" y="52" text-anchor="middle" font-weight="700" fill="#1d4ed8">NameNode</text>
+          <rect x="20" y="120" width="90" height="40" rx="7" fill="#fff4e0" stroke="#b5730d"/><text x="65" y="145" text-anchor="middle" font-weight="700" fill="#b5730d">Client</text>
+          <rect x="150" y="120" width="80" height="40" rx="7" fill="#e4f8ef" stroke="#0f9d75"/><text x="190" y="145" text-anchor="middle" font-weight="700" fill="#0f7a5c">DN1</text>
+          <rect x="270" y="120" width="80" height="40" rx="7" fill="#e4f8ef" stroke="#0f9d75"/><text x="310" y="145" text-anchor="middle" font-weight="700" fill="#0f7a5c">DN2</text>
+          <rect x="380" y="120" width="70" height="40" rx="7" fill="#e4f8ef" stroke="#0f9d75"/><text x="415" y="145" text-anchor="middle" font-weight="700" fill="#0f7a5c">DN3</text>
+          <path d="M65,118 L200,66" stroke="#334" fill="none" marker-end="url(#a2c)"/>
+          <text x="48" y="95" fill="#334" font-size="10">create / addBlock / complete</text>
+          <path d="M112,133 L148,133" stroke="#0f7a5c" fill="none" marker-end="url(#a2)"/>
+          <path d="M232,133 L268,133" stroke="#0f7a5c" fill="none" marker-end="url(#a2)"/>
+          <path d="M352,133 L378,133" stroke="#0f7a5c" fill="none" marker-end="url(#a2)"/>
+          <text x="150" y="112" fill="#0f7a5c" font-size="10">64 KB packets →</text>
+          <path d="M378,175 L272,175" stroke="#b5730d" fill="none" marker-end="url(#a2b)"/>
+          <path d="M268,175 L162,175" stroke="#b5730d" fill="none" marker-end="url(#a2b)"/>
+          <path d="M148,175 L112,175" stroke="#b5730d" fill="none" marker-end="url(#a2b)"/>
+          <text x="205" y="195" fill="#b5730d" font-size="10">← ACK (reverse)</text>
+          <text x="230" y="235" text-anchor="middle" fill="#555" font-size="11">Data flows through the pipeline, not client→each DN.</text>
+          <text x="230" y="252" text-anchor="middle" fill="#555" font-size="11">Write survives as long as ≥1 DataNode lives.</text>
+        </svg>
+      </div>
+      <p class="say"><b>Say:</b> create() → NN grants lease; addBlock → NN returns rack-aware DN list; data streams <b>client→DN1→DN2→DN3</b> in 64 KB packets (each DN writes + forwards); <b>ACKs travel back</b>; NN told on completion.</p>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:13px">
+    <div>
+      <div class="diagram">
+        <svg viewBox="0 0 460 250" font-family="Segoe UI, Arial" font-size="12" role="img" aria-label="HDFS read path">
+          <defs><marker id="a3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#334"/></marker></defs>
+          <text x="230" y="16" text-anchor="middle" font-weight="700" font-size="13" fill="#222">Read Path (Fig 3.3)</text>
+          <rect x="20" y="95" width="100" height="46" rx="7" fill="#fff4e0" stroke="#b5730d"/><text x="70" y="123" text-anchor="middle" font-weight="700" fill="#b5730d">Client</text>
+          <rect x="180" y="40" width="120" height="40" rx="7" fill="#e8f0ff" stroke="#2563eb"/><text x="240" y="65" text-anchor="middle" font-weight="700" fill="#1d4ed8">NameNode</text>
+          <rect x="340" y="150" width="110" height="46" rx="7" fill="#e4f8ef" stroke="#0f9d75"/><text x="395" y="172" text-anchor="middle" font-weight="700" fill="#0f7a5c">DataNode</text><text x="395" y="187" text-anchor="middle" fill="#0f7a5c" font-size="10">closest replica</text>
+          <path d="M120,105 L178,70" stroke="#334" fill="none" marker-end="url(#a3)"/><text x="112" y="88" fill="#334" font-size="10">① open() → locations</text>
+          <path d="M120,128 L338,172" stroke="#334" fill="none" marker-end="url(#a3)"/><text x="150" y="150" fill="#334" font-size="10">② stream data direct (TCP)</text>
+          <text x="230" y="222" text-anchor="middle" fill="#555" font-size="11">③ verify CRC-32C per 512 B → bad? retry another replica.</text>
+          <text x="230" y="238" text-anchor="middle" fill="#555" font-size="11">Data bypasses NameNode → NN is not the bottleneck.</text>
+        </svg>
+      </div>
+      <p class="say"><b>Say:</b> open() → NN returns DN list <b>ordered by proximity</b> (data locality); client reads <b>direct from the nearest DN</b>; checksum each 512 B, retry on mismatch. NameNode is out of the data path.</p>
+    </div>
+
+    <div>
+      <div class="diagram">
+        <svg viewBox="0 0 460 250" font-family="Segoe UI, Arial" font-size="12" role="img" aria-label="Rack-aware replication">
+          <text x="230" y="16" text-anchor="middle" font-weight="700" font-size="13" fill="#222">Rack-Aware Replication, RF=3 (Fig 3.2)</text>
+          <rect x="20" y="40" width="180" height="150" rx="8" fill="#f4f6fa" stroke="#8a94a6"/>
+          <text x="110" y="58" text-anchor="middle" font-weight="700" fill="#555">Rack A</text>
+          <rect x="45" y="72" width="130" height="44" rx="6" fill="#e4f8ef" stroke="#0f9d75"/>
+          <text x="110" y="90" text-anchor="middle" fill="#0f7a5c" font-size="11">DataNode</text>
+          <text x="110" y="105" text-anchor="middle" font-weight="700" fill="#0f7a5c" font-size="11">Replica 1 (local)</text>
+          <rect x="260" y="40" width="180" height="150" rx="8" fill="#f4f6fa" stroke="#8a94a6"/>
+          <text x="350" y="58" text-anchor="middle" font-weight="700" fill="#555">Rack B</text>
+          <rect x="285" y="72" width="130" height="42" rx="6" fill="#e4f8ef" stroke="#0f9d75"/>
+          <text x="350" y="90" text-anchor="middle" fill="#0f7a5c" font-size="11">DataNode</text><text x="350" y="105" text-anchor="middle" font-weight="700" fill="#0f7a5c" font-size="11">Replica 2</text>
+          <rect x="285" y="124" width="130" height="42" rx="6" fill="#e4f8ef" stroke="#0f9d75"/>
+          <text x="350" y="142" text-anchor="middle" fill="#0f7a5c" font-size="11">DataNode</text><text x="350" y="157" text-anchor="middle" font-weight="700" fill="#0f7a5c" font-size="11">Replica 3</text>
+          <text x="230" y="212" text-anchor="middle" fill="#b5730d" font-weight="700" font-size="11">Any 1 rack fails → ≥1 replica survives (no data loss).</text>
+          <text x="230" y="230" text-anchor="middle" fill="#555" font-size="10.5">R2+R3 same rack ⇒ less cross-rack traffic; R2≠R1 rack ⇒ fault tolerance.</text>
+        </svg>
+      </div>
+      <p class="say"><b>Say:</b> R1 = writer's node (low latency); R2 = <b>different rack</b> (survive a rack loss); R3 = <b>same rack as R2</b> (save cross-rack bandwidth).</p>
+    </div>
+  </div>
+
+  <div class="diagram" style="margin-top:13px">
+    <svg viewBox="0 0 900 250" font-family="Segoe UI, Arial" font-size="12" role="img" aria-label="HDFS High Availability">
+      <defs><marker id="a5" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#334"/></marker></defs>
+      <text x="450" y="18" text-anchor="middle" font-weight="700" font-size="13" fill="#222">HDFS High Availability (Fig 3.5) — removes NameNode SPOF</text>
+      <rect x="30" y="90" width="150" height="50" rx="8" fill="#e8f0ff" stroke="#2563eb"/><text x="105" y="112" text-anchor="middle" font-weight="700" fill="#1d4ed8">Active NameNode</text><text x="105" y="128" text-anchor="middle" fill="#1d4ed8" font-size="10">serves all traffic</text>
+      <rect x="720" y="90" width="150" height="50" rx="8" fill="#eef1f7" stroke="#2563eb" stroke-dasharray="5 3"/><text x="795" y="112" text-anchor="middle" font-weight="700" fill="#1d4ed8">Standby NameNode</text><text x="795" y="128" text-anchor="middle" fill="#1d4ed8" font-size="10">ready in seconds</text>
+      <rect x="340" y="40" width="220" height="44" rx="8" fill="#f3ecff" stroke="#7c3aed"/><text x="450" y="58" text-anchor="middle" font-weight="700" fill="#6d28d9">Journal Nodes (≥3)</text><text x="450" y="74" text-anchor="middle" fill="#6d28d9" font-size="10">shared edit log (quorum)</text>
+      <path d="M182,105 L338,72" stroke="#334" fill="none" marker-end="url(#a5)"/><text x="200" y="88" fill="#334" font-size="10">write edits</text>
+      <path d="M560,72 L718,105" stroke="#334" fill="none" marker-end="url(#a5)"/><text x="600" y="88" fill="#334" font-size="10">replay edits</text>
+      <rect x="340" y="150" width="220" height="44" rx="8" fill="#fff4e0" stroke="#b5730d"/><text x="450" y="168" text-anchor="middle" font-weight="700" fill="#b5730d">ZooKeeper (≥3) + ZKFC</text><text x="450" y="184" text-anchor="middle" fill="#b5730d" font-size="10">leader election + health</text>
+      <path d="M180,128 L338,170" stroke="#b5730d" fill="none" stroke-dasharray="4 3"/><path d="M560,170 L720,128" stroke="#b5730d" fill="none" stroke-dasharray="4 3"/>
+      <rect x="360" y="212" width="180" height="30" rx="6" fill="#e4f8ef" stroke="#0f9d75"/><text x="450" y="232" text-anchor="middle" fill="#0f7a5c" font-size="11">DataNodes → report to BOTH NameNodes</text>
+      <text x="795" y="165" text-anchor="middle" fill="#b5730d" font-weight="700" font-size="10">FENCING stops old Active</text>
+      <text x="795" y="178" text-anchor="middle" fill="#b5730d" font-size="10">(SSH / STONITH) → no split-brain</text>
+    </svg>
+  </div>
+  <p class="say"><b>Say:</b> Active writes edits to the <b>Journal Node quorum</b>; Standby replays them (~ms behind). <b>ZooKeeper + ZKFC</b> detect failure &amp; elect the Standby. <b>Fencing</b> kills the old Active first so both never write at once (split-brain).</p>
+
+  <!-- REPLICATION -->
+  <h2 id="repl">🔁 Replication &amp; fault tolerance <span style="opacity:.6;font-size:12px">(§3.4)</span></h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Rack-aware placement ★</h3>
+      <p>Servers sit in <b>racks</b> (20–40 nodes on one top-of-rack switch); a switch/PDU failure kills the whole rack. So RF=3 places:</p>
+      <ul>
+        <li><b>R1</b> — writer's node (or random) → low write latency</li>
+        <li><b>R2</b> — a <b>different rack</b> → survive a rack failure</li>
+        <li><b>R3</b> — <b>same rack as R2</b> → less cross-rack traffic</li>
+      </ul>
+      <div class="note"><b>Result:</b> a single rack failure can never destroy all replicas — ≥1 always survives.</div>
+    </div>
+    <div class="card">
+      <h3>Failure detection &amp; re-replication</h3>
+      <p>DN misses heartbeats past threshold → NameNode finds every block it held, and if replicas &lt; factor, <b>schedules re-replication</b> (a surviving DN copies the block to a new DN).</p>
+      <ul>
+        <li><b>Priority by urgency:</b> blocks with only <b>1 surviving replica</b> first, then 2.</li>
+        <li>Big maintenance windows → NameNode <b>throttles</b> re-replication to avoid saturating the network.</li>
+      </ul>
+      <div class="warnbox"><b>Write durability:</b> a success-ACK'd write is on ≥ <i>r</i> DataNodes; losing up to <i>r</i>−1 at once loses nothing.</div>
+    </div>
+  </div>
+
+  <!-- READ/WRITE detail -->
+  <h2 id="paths">🔀 Read &amp; write paths in words <span style="opacity:.6;font-size:12px">(§3.5)</span></h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Read path</h3>
+      <ol>
+        <li><b>open()</b> → RPC NameNode for first blocks' locations.</li>
+        <li>NN returns DNs <b>ordered by proximity</b> (same node → rack → other racks).</li>
+        <li>Client connects <b>direct to closest DN</b>, streams over TCP.</li>
+        <li><b>Checksum</b> each 512 B (CRC-32C); mismatch → report + retry another replica.</li>
+        <li>Block boundary → ask NN for next blocks; <b>close()</b> at end.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Write path ★</h3>
+      <ol>
+        <li><b>create()</b> → NN entry + <b>write lease</b>.</li>
+        <li><b>addBlock</b> → NN returns rack-aware DN list in pipeline order.</li>
+        <li>Build pipeline <code>client→DN1→DN2→DN3</code>.</li>
+        <li><b>64 KB packets</b> flow down; each DN writes + forwards; <b>ACKs back up</b>.</li>
+        <li>All 3 ACK → NN records block; <b>close()</b> releases lease.</li>
+      </ol>
+      <div class="warnbox"><b>Pipeline failure:</b> failed DN dropped, new pipeline built excluding it, unconfirmed packets re-sent; write succeeds if <b>≥1 DN survives</b>; NN re-replicates later.</div>
+    </div>
+  </div>
+
+  <!-- HA detail -->
+  <h2 id="ha">🛡️ HDFS High Availability <span style="opacity:.6;font-size:12px">(§3.6)</span></h2>
+  <p><b>Problem:</b> the original NameNode is a <b>Single Point Of Failure</b>. Yahoo! 2011 — a NameNode
+  outage stranded <b>42,000 DataNodes</b>; recovery took 30–60 min. <b>Fix (Hadoop 2.0, 2012):</b> Active +
+  Standby NameNodes with automatic failover.</p>
+  <div class="card">
+    <table>
+      <tr><th>Component</th><th>Role</th></tr>
+      <tr><td><b>Journal Nodes</b> (≥3, quorum)</td><td>Shared, fault-tolerant edit log. Active writes every mutation; Standby continuously replays → only a few hundred <b>ms</b> behind.</td></tr>
+      <tr><td><b>ZooKeeper</b> (≥3) + <b>ZKFC</b></td><td><b>Leader election</b> + health monitoring. Each NameNode runs a ZooKeeper Failover Controller; Active's session expiring triggers election → Standby promoted.</td></tr>
+      <tr><td><b>Fencing</b></td><td>Prevents <b>split-brain</b> (both Active → divergent metadata). Fence the old Active first: SSH stop / remote-kill or <b>STONITH</b> hardware.</td></tr>
+    </table>
+  </div>
+
+  <!-- LIMITS -->
+  <h2 id="limits">⚠️ Design limitations &amp; fixes <span style="opacity:.6;font-size:12px">(§3.7)</span></h2>
+  <div class="card warn">
+    <h3>The 4 limitations ★ (Table 3.3)</h3>
+    <table>
+      <tr><th>Limitation</th><th>Why</th><th>Fix / alternative</th></tr>
+      <tr><td>Small-file problem</td><td>~150 B NameNode heap <b>per file</b>, regardless of size (10M files ≈ 1.5 GB heap)</td><td>SequenceFiles, HAR, CombineFileInputFormat, compaction</td></tr>
+      <tr><td>No random writes</td><td>Blocks immutable after write → simple replication/consistency</td><td>HBase (LSM-tree over HDFS)</td></tr>
+      <tr><td>High read latency (50–200 ms)</td><td>NameNode round-trip + DN TCP setup; tuned for throughput not latency</td><td>Presto, Spark SQL + in-memory cache</td></tr>
+      <tr><td>NameNode SPOF / ~100M-file ceiling</td><td>Single master; heap-bounded namespace</td><td>HDFS HA · HDFS Federation (many NameNodes)</td></tr>
+    </table>
+  </div>
+
+  <!-- CLOUD -->
+  <h2 id="cloud">☁️ Beyond HDFS: cloud object storage <span style="opacity:.6;font-size:12px">(§3.8)</span></h2>
+  <div class="grid">
+    <div class="card">
+      <h3>How S3 / GCS / ADLS differ</h3>
+      <ul>
+        <li><b>Flat namespace</b> keyed by path-string (prefixes mimic folders); objects up to <b>5 TB</b>.</li>
+        <li><b>Unlimited, auto-scaling</b> — no NameNode heap limit, no manual replication, no DataNodes.</li>
+        <li><b>Cheap + simple</b> — ~<b>$0.023/GB/month</b>, no servers or HA to run.</li>
+        <li><b>Trade-off:</b> storage/compute separated → every read is a network hop (no data locality), but 25–100 Gbit/s networks make it minor.</li>
+      </ul>
+    </div>
+    <div class="card star">
+      <h3>The big shift ★</h3>
+      <p>From <b>tightly-coupled</b> storage-compute (HDFS: add compute only by adding storage) to
+      <b>loosely-coupled</b> (S3 + cloud compute: scale Spark 10→1,000→10 nodes without moving a byte).</p>
+      <div class="note"><b>Elasticity</b> is <i>the</i> reason cloud object storage displaced on-prem HDFS for new builds. HDFS still lives in own-data-centre shops.</div>
+    </div>
+  </div>
+
+  <!-- YAHOO -->
+  <h2 id="yahoo">📚 Case study — Yahoo! Hadoop (2006–2011) <span style="opacity:.6;font-size:12px">(§3.9)</span></h2>
+  <div class="card">
+    <ul>
+      <li><b>Scale:</b> 1,000 → <b>42,000 nodes</b>; ~<b>100 PB</b> in HDFS; tens of thousands of MapReduce jobs/day; <b>~2–3 DataNode failures/day</b> — exactly the GFS prediction.</li>
+      <li><b>NameNode bottleneck:</b> 50B blocks filled 64 GB heap; 90-min restarts → solved with <b>HDFS Federation</b>.</li>
+      <li><b>Small files:</b> millions/day → automated <b>SequenceFile compaction</b> (~1,000× smaller namespace).</li>
+      <li><b>Contributed to Apache:</b> HDFS Append, Hadoop Security (Kerberos), <b>HDFS HA</b>, and <b>YARN</b>.</li>
+      <li><b>Lesson:</b> invest in HA <i>before</i> the outage; manage NameNode memory and small files actively.</li>
+    </ul>
+  </div>
+
+  <!-- NUMBERS -->
+  <h2 id="numbers">🔢 Numbers to have cold</h2>
+  <div class="card num">
+    <div class="grid3" style="gap:0 13px">
+      <table>
+        <tr><td>GFS chunk</td><td>64 MB</td></tr>
+        <tr><td>HDFS block</td><td>128 MB</td></tr>
+        <tr><td>Replication factor</td><td>3</td></tr>
+        <tr><td>Metadata / file / block</td><td>~150 B</td></tr>
+        <tr><td>1 GB file → blocks</td><td>8</td></tr>
+      </table>
+      <table>
+        <tr><td>Heartbeat</td><td>3 s</td></tr>
+        <tr><td>DN dead after</td><td>&gt;10.5 min</td></tr>
+        <tr><td>Block report</td><td>6 h</td></tr>
+        <tr><td>Block scan</td><td>~3 wk</td></tr>
+        <tr><td>Write packet</td><td>64 KB</td></tr>
+      </table>
+      <table>
+        <tr><td>Checksum</td><td>512 B / CRC-32C</td></tr>
+        <tr><td>Checkpoint</td><td>1 h / 1M txn</td></tr>
+        <tr><td>Journal / ZK min</td><td>3 each</td></tr>
+        <tr><td>Random read</td><td>50–200 ms</td></tr>
+        <tr><td>1 PB @ 64 MB</td><td>~16M chunks</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- GLOSSARY -->
+  <h2 id="glossary">📖 One-line glossary</h2>
+  <div class="grid">
+    <div class="card">
+      <table>
+        <tr><td><b>NameNode</b></td><td>Master; holds namespace + block→DN map in RAM.</td></tr>
+        <tr><td><b>DataNode</b></td><td>Worker; stores block bytes, serves I/O direct.</td></tr>
+        <tr><td><b>FsImage</b></td><td>On-disk snapshot of the namespace.</td></tr>
+        <tr><td><b>EditLog</b></td><td>Write-ahead log of namespace mutations.</td></tr>
+        <tr><td><b>Checkpoint</b></td><td>Merge EditLog into FsImage.</td></tr>
+        <tr><td><b>Block report</b></td><td>DN's list of blocks it holds.</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <table>
+        <tr><td><b>Heartbeat</b></td><td>DN "I'm alive" ping (3 s).</td></tr>
+        <tr><td><b>Lease</b></td><td>Grant that lets one client write a file.</td></tr>
+        <tr><td><b>Rack-aware</b></td><td>Replica placement across racks for FT.</td></tr>
+        <tr><td><b>Split-brain</b></td><td>Two Active NameNodes → divergent metadata.</td></tr>
+        <tr><td><b>Fencing</b></td><td>Force-stop old Active before failover.</td></tr>
+        <tr><td><b>Federation</b></td><td>Multiple NameNodes to scale namespace.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Q&A -->
+  <h2 id="qa">❓ Self-test — click to reveal (SQ3.1–3.14)</h2>
+  <div class="grid">
+    <div>
+      <details><summary><span class="qid">SQ3.1</span> 3 reasons NFS can't do 500 PB?</summary><div class="a">Capacity (finite controllers, no horizontal scale) · Throughput (can't parallel-scan PBs) · Fault tolerance (~3 fails/day treated as exceptional → always recovering).</div></details>
+      <details><summary><span class="qid">SQ3.2</span> GFS chunk? Size &amp; why not 4 KB?</summary><div class="a">Fixed unit a file splits into; <b>64 MB</b>. Big → less metadata, less client↔master chatter, sustained direct sequential I/O.</div></details>
+      <details><summary><span class="qid">SQ3.3</span> Why metadata in RAM? Ceiling?</summary><div class="a">Sub-ms lookups. Ceiling = chunk entries that fit in RAM; <b>1 PB ≈ 16M entries</b> @ 64 MB → fits, so master ≠ bottleneck.</div></details>
+      <details><summary><span class="qid">SQ3.4</span> NameNode? 5 jobs? If killed?</summary><div class="a">Master/metadata server. Jobs: namespace, block mgmt, access control, lease, balancing. Killed → whole cluster <b>inaccessible</b> (bytes exist but unreachable).</div></details>
+      <details><summary><span class="qid">SQ3.5</span> Secondary NN vs standby?</summary><div class="a">Secondary is <b>NOT</b> failover — only <b>checkpoints</b> (EditLog→FsImage) to bound restart time. Failover = HA.</div></details>
+      <details><summary><span class="qid">SQ3.6</span> Rack policy? After rack fails?</summary><div class="a">R1 local, R2 other rack, R3 same rack as R2. Any 1 rack fails → <b>≥1 replica survives</b> → goal met.</div></details>
+      <details><summary><span class="qid">SQ3.7</span> Trace write. Where data sent? Hops?</summary><div class="a">create()+lease → addBlock → pipeline <b>client→DN1→DN2→DN3</b>, 64 KB packets, ACK back. Data sent at packet step, <b>3 DN hops</b>; ACK'd only after all 3 write.</div></details>
+    </div>
+    <div>
+      <details><summary><span class="qid">SQ3.8</span> Heartbeat vs block report?</summary><div class="a">Heartbeat (3 s) = "alive", miss &gt;10.5 min → dead + re-replicate. Block report (6 h) = list of replicas → NN builds block→DN map.</div></details>
+      <details><summary><span class="qid">SQ3.9</span> 200M files × 1 block, 300 B/pair → heap?</summary><div class="a">200M × 300 B = <b>60 GB</b> heap — independent of data volume = the small-file problem.</div></details>
+      <details><summary><span class="qid">SQ3.10</span> Why no random writes?</summary><div class="a">Only new-file writes + appends; blocks immutable → <b>no cross-replica write coordination</b> → simple consistency. Updates → HBase.</div></details>
+      <details><summary><span class="qid">SQ3.11</span> HA? 3 extra components?</summary><div class="a">Active + Standby NN. <b>Journal Nodes (≥3)</b> shared edit log · <b>ZooKeeper/ZKFC (≥3)</b> election + health · <b>Fencing</b> stops split-brain.</div></details>
+      <details><summary><span class="qid">SQ3.12</span> Split-brain? Fencing? 2 ways?</summary><div class="a">Both NNs Active → divergent metadata. Fencing stops old Active first. Ways: <b>SSH kill</b> · <b>STONITH</b> hardware.</div></details>
+      <details><summary><span class="qid">SQ3.13</span> HDFS vs S3 (4 dims)?</summary><div class="a">Locality: HDFS local / S3 network hop · Ops: HDFS heavy / S3 managed · Ceiling: HDFS ~100M files / S3 unlimited · Cost: HDFS capital / S3 $0.023/GB/mo.</div></details>
+      <details><summary><span class="qid">SQ3.14</span> 1M×200 KB files/day → heap full. Cause + 2 fixes?</summary><div class="a">Cause = small-file problem (~150 B/file heap). Fixes: SequenceFiles/HAR compaction · batch/append into big files (CombineFileInputFormat).</div></details>
+      <details><summary><span class="qid">AP3.1</span> 50 PB, RF3, 128 MB — key answers</summary><div class="a">Raw = <b>150 PB</b>; blocks ≈ <b>419M</b>; DNs @200 TB ≈ <b>768</b>; heap ≈ <b>63 GB</b> (fits 128 GB); RF3→2 saves 50 PB but tolerates only 1 loss.</div></details>
+    </div>
+  </div>
+
+  <footer>
+    Faruqui, <em>Data Engineering</em> (2026, CC BY 4.0), Chapter 3 · BDA Class Test 1 study guide ·
+    Draw the 5 diagrams from memory to check yourself. Good luck! 🍀
+  </footer>
+</div>
+
+<button id="toTop" title="Back to top" aria-label="Back to top">↑</button>
+
+<script>
+  // theme toggle (respects system default on first load)
+  (function(){
+    var html=document.documentElement, btn=document.getElementById('themeBtn');
+    var saved=null; try{ saved=localStorage.getItem('bda-theme'); }catch(e){}
+    var sysLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var theme = saved || (sysLight ? 'light' : 'dark');
+    apply(theme);
+    btn.addEventListener('click', function(){
+      theme = (html.getAttribute('data-theme')==='light') ? 'dark' : 'light';
+      apply(theme); try{ localStorage.setItem('bda-theme', theme); }catch(e){}
+    });
+    function apply(t){ html.setAttribute('data-theme', t); btn.textContent = (t==='light'?'🌙':'☀️'); }
+  })();
+
+  // expand / collapse all answers
+  function setAll(open){ document.querySelectorAll('details').forEach(function(d){ d.open=open; }); }
+
+  // scroll progress + back-to-top + active nav
+  var prog=document.getElementById('progress'), toTop=document.getElementById('toTop');
+  var links=[].slice.call(document.querySelectorAll('#nav a'));
+  var sections=links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function onScroll(){
+    var st=window.scrollY||document.documentElement.scrollTop;
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    prog.style.width = (h>0 ? (st/h*100) : 0) + '%';
+    toTop.classList.toggle('show', st>400);
+    var idx=0;
+    for(var i=0;i<sections.length;i++){ if(sections[i] && sections[i].getBoundingClientRect().top<=90) idx=i; }
+    links.forEach(function(a,i){ a.classList.toggle('active', i===idx); });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+  toTop.addEventListener('click', function(){ window.scrollTo({top:0, behavior:'smooth'}); });
+  onScroll();
+</script>
+</body>
+</html>

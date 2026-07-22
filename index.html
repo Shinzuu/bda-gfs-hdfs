@@ -77,7 +77,12 @@
   .practice summary::-webkit-details-marker{display:none}
   .practice summary::before{content:"▸";color:var(--accent)} .practice details[open] summary::before{content:"▾"}
   .practice .qid{color:var(--accent);font-weight:800;flex:none}
-  .practice .ans{padding:0 0 15px;font-size:15px;border-top:1px dashed var(--line);margin-top:2px;padding-top:12px}
+  .practice .ans{font-size:15px;margin:4px 0 14px;padding:13px 15px;border-radius:10px;color:#2b3442;line-height:1.6}
+  .practice .ans b,.practice .ans strong{color:#141a24}
+  .practice .ans .step{margin:6px 0}
+  .practice details:has(.b-th) .ans{background:#eef3ff;border:1px solid #dae3fb}
+  .practice details:has(.b-math) .ans{background:#edf9f1;border:1px solid #d2ecde}
+  .practice details:not(:has(.badge)) .ans{background:#f5f1fb;border:1px solid #e6ddf6}
   .badge{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:5px;margin-left:6px;vertical-align:middle}
   .b-th{background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent)}
   .b-math{background:color-mix(in srgb,var(--accent2) 22%,transparent);color:var(--accent2)}
@@ -395,23 +400,60 @@
       the Standby is promoted, guaranteeing only one Active exists.</div></details>
 
     <details><summary><span class="qid">M1</span> A 1 GB file, 128 MB blocks, replication 3. How many blocks, how many stored copies, and roughly how much NameNode RAM for the blocks?<span class="badge b-math">math</span></summary>
-      <div class="ans"><b>Blocks</b> = 1024 MB ÷ 128 = <b>8</b> (last block isn't padded). <b>Stored copies</b> =
-      8 × 3 = <b>24</b>. <b>RAM</b> ≈ 8 blocks × 150 bytes ≈ <b>1.2 KB</b> (plus ~150 B for the file entry).
-      Note RAM counts <b>blocks, not copies</b>.</div></details>
-    <details><summary><span class="qid">M2</span> You must store 2 PB of data at replication 3 on DataNodes with 100 TB usable each. Raw capacity needed? Minimum DataNodes?<span class="badge b-math">math</span></summary>
-      <div class="ans"><b>Raw</b> = 2 PB × 3 = <b>6 PB</b> = 6144 TB. <b>DataNodes</b> = ⌈6144 ÷ 100⌉ = <b>62</b>.</div></details>
+      <div class="ans">
+        <div class="step"><b>1. Given:</b> file = 1 GB = 1024 MB, block size = 128 MB, replication factor = 3.</div>
+        <div class="step"><b>2. Blocks</b> = file size ÷ block size = 1024 ÷ 128 = <b>8</b>.</div>
+        <div class="step"><b>3.</b> (The last block isn't padded out to 128 MB, so it stays exactly 8 blocks.)</div>
+        <div class="step"><b>4. Stored copies:</b> every block is kept 3 times → 8 × 3 = <b>24</b> physical copies.</div>
+        <div class="step"><b>5. NameNode RAM:</b> it holds ≈ 150 bytes of metadata per block.</div>
+        <div class="step"><b>6.</b> Block metadata = 8 × 150 B = 1200 B ≈ <b>1.2 KB</b>.</div>
+        <div class="step"><b>7.</b> Add ~150 B for the file's own entry → ≈ 1.35 KB in total.</div>
+        <div class="step"><b>8. Key point:</b> RAM is charged per <b>block (8)</b>, not per copy (24) — replication costs disk, not NameNode memory.</div>
+      </div></details>
+    <details><summary><span class="qid">M2</span> Store 2 PB at replication 3 on DataNodes with 100 TB usable each. Raw capacity needed? Minimum DataNodes?<span class="badge b-math">math</span></summary>
+      <div class="ans">
+        <div class="step"><b>1. Given:</b> data = 2 PB, replication = 3, each DataNode = 100 TB usable.</div>
+        <div class="step"><b>2. Raw capacity</b> = data × replication (every byte is stored 3×) = 2 PB × 3 = <b>6 PB</b>.</div>
+        <div class="step"><b>3.</b> Convert to TB: 6 PB = 6 × 1024 = 6144 TB.</div>
+        <div class="step"><b>4. DataNodes</b> = raw ÷ per-node = 6144 ÷ 100 = 61.44.</div>
+        <div class="step"><b>5.</b> You can't have a fraction of a machine, so round up.</div>
+        <div class="step"><b>6.</b> Minimum DataNodes = <b>62</b>.</div>
+        <div class="step"><b>7. Check:</b> 62 × 100 TB = 6200 TB, which is ≥ the 6144 TB we need. ✓</div>
+        <div class="step"><b>8.</b> (In practice you'd add a few spare nodes for headroom and failures.)</div>
+      </div></details>
     <details><summary><span class="qid">M3</span> A cluster holds 10 million small files, 1 block each. Estimate NameNode RAM (≈150 B per file + 150 B per block). Why is this the "small-file problem"?<span class="badge b-math">math</span></summary>
-      <div class="ans">≈ 10,000,000 × (150 + 150) B = 10M × 300 B = <b>3 GB</b> (about 1.5 GB if you count blocks
-      only). The cost is <b>per file, not per byte</b> — so millions of tiny files burn the same RAM as millions
-      of huge ones, and the NameNode runs out of memory even though the data is small.</div></details>
+      <div class="ans">
+        <div class="step"><b>1. Given:</b> 10,000,000 files, each taking 1 block.</div>
+        <div class="step"><b>2.</b> NameNode RAM ≈ 150 B per file + 150 B per block.</div>
+        <div class="step"><b>3.</b> So each file costs 150 + 150 = 300 B of RAM.</div>
+        <div class="step"><b>4. Total</b> = 10,000,000 × 300 B = 3,000,000,000 B.</div>
+        <div class="step"><b>5.</b> = <b>3 GB</b> (about 1.5 GB if you count only the block objects).</div>
+        <div class="step"><b>6. Why it's the "small-file problem":</b> that 3 GB is the same whether each file is 1 KB or 100 MB.</div>
+        <div class="step"><b>7.</b> The cost is charged <b>per file, not per byte</b> — so millions of tiny files burn RAM out of all proportion to the data.</div>
+        <div class="step"><b>8. Fix:</b> pack many small files into few big ones (SequenceFiles, HAR archives, or compaction).</div>
+      </div></details>
     <details><summary><span class="qid">M4</span> Ingest is 2 GB/s at replication 3, 128 MB blocks. Bandwidth per pipeline hop? New-block rate (add-block RPCs/s)?<span class="badge b-math">math</span></summary>
-      <div class="ans">The pipeline is client → DN1 → DN2 → DN3, so <b>each hop carries the full 2 GB/s</b> (it's
-      passed along, not sent three times from the client). Blocks created = 2048 MB/s ÷ 128 MB = <b>16
-      blocks/s</b>, so the NameNode gets ≈ <b>16 add-block requests per second</b>.</div></details>
+      <div class="ans">
+        <div class="step"><b>1. Given:</b> ingest = 2 GB/s, replication = 3, block size = 128 MB.</div>
+        <div class="step"><b>2.</b> The write path is a pipeline: client → DN1 → DN2 → DN3.</div>
+        <div class="step"><b>3.</b> Data is passed <b>along</b> the line — the client does <b>not</b> send it three separate times.</div>
+        <div class="step"><b>4. Per hop:</b> each link therefore carries the full ingest rate = <b>2 GB/s</b>.</div>
+        <div class="step"><b>5.</b> (That's the whole point of the pipeline — the client's uplink stays 2 GB/s, not 6.)</div>
+        <div class="step"><b>6. New-block rate</b> = ingest ÷ block size.</div>
+        <div class="step"><b>7.</b> = 2048 MB/s ÷ 128 MB = <b>16 blocks/s</b>.</div>
+        <div class="step"><b>8.</b> Each new block triggers one addBlock call → the NameNode gets ≈ <b>16 RPCs/s</b>.</div>
+      </div></details>
     <details><summary><span class="qid">M5</span> 50 PB at replication 3, 128 MB blocks, 200 TB DataNodes, 150 B/block. Raw capacity, block count, DataNodes, NameNode heap?<span class="badge b-math">math</span></summary>
-      <div class="ans"><b>Raw</b> = 50 × 3 = <b>150 PB</b>. <b>Blocks</b> ≈ 50 PB ÷ 128 MB ≈ <b>419 million</b>.
-      <b>DataNodes</b> = 150 PB ÷ 200 TB ≈ <b>768</b>. <b>Heap</b> ≈ 419M × 150 B ≈ <b>63 GB</b> (fits in a
-      128 GB server). Dropping to RF 2 saves 50 PB but then only survives <b>1</b> simultaneous DataNode loss.</div></details>
+      <div class="ans">
+        <div class="step"><b>1. Given:</b> 50 PB data, RF = 3, block = 128 MB, node = 200 TB, 150 B per block.</div>
+        <div class="step"><b>2. Raw capacity</b> = 50 × 3 = <b>150 PB</b>.</div>
+        <div class="step"><b>3. Block count</b> = data ÷ block size = 50 PB ÷ 128 MB.</div>
+        <div class="step"><b>4.</b> In bytes that's 50 × 2⁵⁰ ÷ 2²⁷ = 50 × 2²³ ≈ <b>419 million</b> blocks.</div>
+        <div class="step"><b>5. DataNodes</b> = raw ÷ per-node = 150 PB ÷ 200 TB = 153600 ÷ 200 = <b>768</b>.</div>
+        <div class="step"><b>6. NameNode heap</b> = blocks × 150 B = 419M × 150 ≈ <b>63 GB</b>.</div>
+        <div class="step"><b>7.</b> That comfortably fits a 128 GB-RAM master. ✓</div>
+        <div class="step"><b>8. Trade-off:</b> going to RF 2 saves 50 PB of disk, but then the cluster survives only <b>1</b> DataNode failure at a time instead of 2.</div>
+      </div></details>
   </section>
 
   <footer>

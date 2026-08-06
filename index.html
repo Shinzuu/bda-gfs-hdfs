@@ -6,7 +6,7 @@
 <meta name="description" content="Big Data Analytics Chapter 3 (GFS & HDFS) taught from scratch: why distributed file systems exist, how HDFS stores and protects data, read/write paths, High Availability — with analogies, the textbook figures, and theory + math practice.">
 <meta name="color-scheme" content="dark light">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='84'>%F0%9F%90%98</text></svg>">
-<title>GFS &amp; HDFS — BDA Midterm (learn it from zero)</title>
+<title>Big Data Analytics — Midterm (Weeks 1–4) · full study deck</title>
 <style>
   :root{
     --bg:#0e1016; --panel:#181b24; --panel2:#1f2330; --ink:#e7e9ee; --muted:#9aa3b2;
@@ -221,15 +221,32 @@ body.rot .rotexit{display:inline-flex;position:fixed;z-index:80;top:9px;right:9p
   <div class="row">
     <span class="brand">🐘 BDA · Midterm</span>
     <div class="navchips" id="nav">
-      <a href="#intro">The problem</a>
+      <a href="#w1-why">W1 · Why big data</a>
+      <a href="#w1-vs">3Vs/5Vs</a>
+      <a href="#w1-taxonomy">Data types</a>
+      <a href="#w1-scaling">Scaling</a>
+      <a href="#w1-cap">CAP</a>
+      <a href="#w1-batchstream">Batch/Stream</a>
+      <a href="#w2-silos">W2 · Integration</a>
+      <a href="#w2-heterogeneity">Heterogeneity</a>
+      <a href="#w2-entity">Entity res.</a>
+      <a href="#w2-quality">Quality</a>
+      <a href="#w2-etl">ETL/ELT</a>
+      <a href="#intro">W3 · GFS/HDFS</a>
       <a href="#gfs">GFS</a>
       <a href="#arch">HDFS parts</a>
-      <a href="#blocks">Blocks &amp; replicas</a>
+      <a href="#blocks">Blocks</a>
       <a href="#read">Read</a>
       <a href="#write">Write</a>
-      <a href="#ha">Failover (HA)</a>
+      <a href="#ha">HA</a>
       <a href="#limits">Limits</a>
       <a href="#cloud">Cloud (S3)</a>
+      <a href="#w4-mapreduce">W4 · MapReduce</a>
+      <a href="#w4-combiner">Combiner</a>
+      <a href="#w4-pipeline">Pipeline</a>
+      <a href="#w4-pig-hive">Pig/Hive</a>
+      <a href="#w4-hbase">HBase</a>
+      <a href="#w4-tools">Tool choice</a>
       <a href="#practice">Practice</a>
     </div>
     <div class="deckctrls"><button class="iconbtn" id="zoomOut" title="Smaller text" aria-label="Smaller">A−</button><span id="zoomVal">100%</span><button class="iconbtn" id="zoomIn" title="Larger text" aria-label="Larger">A+</button><button class="iconbtn" id="modeBtn" title="Deck / Scroll view">▦ Deck</button></div>
@@ -240,17 +257,19 @@ body.rot .rotexit{display:inline-flex;position:fixed;z-index:80;top:9px;right:9p
 <div class="lesson">
 
   <header class="hero">
-    <h1>Distributed File Systems: GFS &amp; HDFS — from zero</h1>
+    <h1>Big Data Analytics — Midterm, taught from zero (Weeks 1–4)</h1>
     <div>
-      <span class="pill p-red">Class Test 1 · Chapter 3</span>
-      <span class="pill p-blue">Theory + math, worked</span>
+      <span class="pill p-red">Midterm · Weeks 1–4 (Ch 1–4)</span>
+      <span class="pill p-blue">Big-data foundations · Integration · GFS/HDFS · MapReduce</span>
       <span class="pill p-grn">Never opened the book? Start here.</span>
     </div>
-    <p class="src">This teaches the whole chapter assuming you know <em>nothing</em> — what problem GFS solved,
-    how HDFS stores a file, how it survives crashes, and how data moves in and out. Course:
-    <b>CSE 4345 Big Data Analytics</b> (R. U. Faruqui) ·
+    <p class="src">The whole BDA midterm in one deck, assuming you know <em>nothing</em>.
+    <b>Week 1</b> — what makes data "big": the 3Vs/5Vs, data types, scaling, CAP, batch vs stream.
+    <b>Week 2</b> — data integration: heterogeneity, entity resolution, data quality, ETL vs ELT.
+    <b>Week 3</b> — distributed storage: GFS &amp; HDFS. <b>Week 4</b> — processing: MapReduce, Pig, Hive
+    and HBase. Course: <b>Big Data Analytics</b> (R. U. Faruqui) ·
     <a href="https://rufaruqui.github.io/data_analytics/">rufaruqui.github.io/data_analytics</a>. Text &amp;
-    figures from Faruqui, <em>Data Engineering</em> (2026, CC BY 4.0), Ch. 3; every number checked.</p>
+    figures from Faruqui, <em>Data Engineering</em> (2026, CC BY 4.0), Ch. 1–4; every number checked.</p>
     <div class="toolbar">
       <button class="btn primary" onclick="window.print()">🖨️ Save as PDF</button>
       <button class="btn" onclick="setAll(true)">Show all answers</button>
@@ -259,6 +278,284 @@ body.rot .rotexit{display:inline-flex;position:fixed;z-index:80;top:9px;right:9p
   </header>
 
   <!-- INTRO -->
+  <!-- ==================== WEEK 1 · THE BIG DATA REVOLUTION ==================== -->
+  <section id="w1-why">
+    <h2><span class="kicker">Week 1 · why big data exists</span>Why "big data", and what a data engineer does</h2>
+    <div class="why"><span class="tag">Why we care</span>
+      The world stopped running out of data long ago. IDC projected the global <b>datasphere</b> would hit
+      <b>175 zettabytes by 2025</b> — a <b>23× jump</b> over the 7.2 ZB of 2018. Traditional relational
+      databases (RDBMS, going back to <b>Codd, 1970</b>) are brilliant for tidy, bounded data, but they
+      break when data is measured in <b>petabytes</b>, arrives from <b>millions of streams at once</b>, and
+      isn't neat rows and columns. That breakdown is the whole reason this subject exists.</div>
+    <div class="def"><span class="tag">📌 Definition — data engineering</span>
+      <b>Data engineering</b> is the discipline of designing, building and maintaining systems that
+      <b>collect, store, transform and serve large-scale data</b> for downstream consumers (analysts, ML
+      models, dashboards). It is <em>not</em> about generating insight — that's data science.</div>
+    <div class="hook"><span>The one-liner examiners love: <b>"the data engineer builds the plumbing;
+      analysts and scientists use the water."</b> DE makes data available, reliable and efficiently
+      accessible — insight is someone else's job.</span></div>
+    <h3>The units — memorise the ladder</h3>
+    <div class="facts"><span class="tag">Hard facts — data volume units</span>
+    <table><tbody>
+      <tr><td>Kilobyte → Yottabyte</td><td>KB 10³ · MB 10⁶ · GB 10⁹ · TB 10¹² · PB 10¹⁵ · EB 10¹⁸ · <b>ZB 10²¹</b> · YB 10²⁴</td></tr>
+      <tr><td>2025 global datasphere</td><td><b>175 ZB</b> (1 ZB = 10²¹ bytes)</td></tr>
+      <tr><td>RDBMS comfort zone</td><td>tens of TB, thousands of tx/s, full ACID — great until data exceeds one machine</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section id="w1-vs">
+    <h2><span class="kicker">Week 1 · the defining traits</span>The 3Vs (and the 5Vs)</h2>
+    <div class="why"><span class="tag">Why we care</span>
+      "What makes data <em>big</em>?" is a guaranteed question. The answer is the <b>3Vs</b>, coined by
+      <b>Doug Laney (META Group, 2001)</b> and formalised by <b>Gartner in 2012</b>. Learn the three, then
+      the two extras that make the <b>5Vs</b>.</div>
+    <div class="def"><span class="tag">📌 The 3Vs</span>
+      <b>Volume</b> — the sheer <b>scale</b> of data (how much). <b>Velocity</b> — the <b>speed</b> at which
+      it arrives and must be acted on (how fast). <b>Variety</b> — the <b>diversity</b> of formats, schemas
+      and sources (how many kinds).</div>
+    <div class="facts"><span class="tag">Hard facts — production numbers examiners quote</span>
+    <table><tbody>
+      <tr><td>Volume</td><td>Meta <b>500 TB/day</b> ingested · Google <b>&gt;100 PB/day</b> · Walmart <b>&gt;2.5 PB</b> · CERN <b>~15 PB/yr</b></td></tr>
+      <tr><td>Velocity</td><td>Visa <b>~24,000 tx/s</b> peak · IoT <b>&gt;1 billion readings/hour</b> · stock quotes <b>&gt;1M msg/s</b></td></tr>
+      <tr><td>Single-server ceiling</td><td><b>~64 TB RAM</b> max in 2024 — can't hold a petabyte; 1 PB read at 7 GB/s ≈ <b>41 hours</b></td></tr>
+    </tbody></table></div>
+    <h3>The extended 5Vs</h3>
+    <p>Two dimensions were added later:</p>
+    <ul>
+      <li><b>Veracity</b> — the <b>trustworthiness / quality</b> of data (GPS drift, OCR errors, bot tweets,
+      sensor faults). Garbage in → garbage out, no matter how good the model.</li>
+      <li><b>Value</b> — the <b>business/societal utility</b> extracted. The ultimate justification; petabytes
+      of perfect data are worthless if no useful question is ever asked.</li>
+    </ul>
+    <div class="hook"><span>Order to memorise: <b>Volume, Velocity, Variety</b> (the 3Vs) <b>+ Veracity, Value</b>
+      = 5Vs. First three = the data itself; last two = quality &amp; worth.</span></div>
+    <div class="tip"><span class="tag">🎯 Exam tip</span>
+      The velocity spectrum is a favourite: <b>Batch</b> (hours) → <b>Micro-batch</b> (seconds) →
+      <b>Stream</b> (milliseconds) → <b>Real-time</b> (sub-ms). Match the tool to the latency need.</div>
+  </section>
+
+  <section id="w1-taxonomy">
+    <h2><span class="kicker">Week 1 · managing Variety</span>Structured, semi-structured, unstructured</h2>
+    <div class="why"><span class="tag">Why we care</span>
+      Handling Variety needs a way to <b>classify data by its schema</b>. There are exactly three
+      categories, and "classify these sources" is an almost-certain question.</div>
+    <div class="def"><span class="tag">📌 The three categories</span>
+      <b>Structured</b> — predefined, rigid schema; every record has the same fields; <b>schema-on-write</b>
+      (schema enforced <em>before</em> writing); lives in RDBMS, queried with SQL.<br>
+      <b>Semi-structured</b> — flexible, <b>self-describing</b> schema embedded in the data (keys/tags
+      travel with each record); <b>schema-on-read</b> (schema applied at query time); JSON, XML; NoSQL/files.<br>
+      <b>Unstructured</b> — <b>no schema</b>; meaning locked in the raw signal (pixels, audio, text); needs
+      ML/NLP/CV to interpret.</div>
+    <div class="analogy"><span class="tag">💡 Think of it like…</span>
+      Structured = a <b>printed form</b> (every box labelled and fixed). Semi-structured = a <b>sticky note
+      with "key: value" lines</b> (self-labelling, add lines freely). Unstructured = a <b>voice memo</b> —
+      you must actually listen to it to know what's inside.</div>
+    <div class="facts"><span class="tag">Hard facts — the three data types</span>
+    <table><tbody>
+      <tr><td>Structured</td><td>schema-on-<b>write</b> · RDBMS/SQL · bank ledger · <b>~20%</b> of global data</td></tr>
+      <tr><td>Semi-structured</td><td>schema-on-<b>read</b> · self-describing · JSON/XML · <b>~10%</b></td></tr>
+      <tr><td>Unstructured</td><td><b>no</b> schema · needs ML/NLP/CV · images/audio/video/text · <b>~70–80%</b> (the majority)</td></tr>
+    </tbody></table></div>
+    <div class="confusion"><span class="tag">⚠️ Classic trap</span>
+      <b>JSON and XML are semi-structured, NOT unstructured.</b> They carry an embedded schema (key names,
+      nesting) a query engine can navigate. Only data whose meaning is in a raw binary signal — an MRI, a
+      JPEG, an MP3 — is truly unstructured.</div>
+  </section>
+
+  <section id="w1-scaling">
+    <h2><span class="kicker">Week 1 · the engineering response</span>Scaling out, and moving compute to data</h2>
+    <h3>Vertical vs horizontal scaling</h3>
+    <div class="def"><span class="tag">📌 Two ways to get more power</span>
+      <b>Vertical scaling (scale up)</b> — add resources to <b>one</b> machine (more CPU/RAM/disk). Simple,
+      but has a <b>hard ceiling</b> (~64 TB RAM) and <b>superlinear cost</b> (≈2× RAM ⇒ ≈8× price).<br>
+      <b>Horizontal scaling (scale out)</b> — add <b>more commodity machines</b> ($3–8K each) and spread
+      data/compute across them. <b>Near-linear</b> cost &amp; throughput, and it <b>tolerates node failures</b>.
+      This is what big-data systems use.</div>
+    <div class="def"><span class="tag">📌 The commodity-hardware insight</span>
+      In a big cluster, <b>hardware failure is normal, not exceptional</b> — so design for it. 1,000 servers
+      at 1%/yr disk failure ≈ <b>10 failures/year (~1 every 5 weeks)</b>; at 10,000 nodes (Yahoo!'s 2008
+      Hadoop cluster) ≈ <b>1 failure/day</b>. The fix isn't preventing failure — it's <b>replicating</b> every
+      block across nodes.</div>
+    <h3>Moving computation to the data</h3>
+    <div class="def"><span class="tag">📌 Data locality</span>
+      Old model: move <b>data to the computation</b> (fetch into a central CPU) — the network becomes the
+      bottleneck at PB scale. New model (from Google's <b>MapReduce, 2004</b>): <b>move computation to the
+      data</b> — ship the code to the node holding the block, run locally, return only small results.</div>
+    <div class="hook"><span>"<b>Don't move the data, move the code.</b>" In HDFS a block sits on 3 nodes; the
+      scheduler tries <b>task-local → rack-local → network</b>, and in production <b>&gt;90% of tasks run
+      data-local</b>.</span></div>
+  </section>
+
+  <section id="w1-cap">
+    <h2><span class="kicker">Week 1 · the core theorem</span>The CAP theorem</h2>
+    <div class="why"><span class="tag">Why we care</span>
+      The moment a system spans multiple machines over a network, one theorem constrains every design
+      decision. Conjectured by <b>Eric Brewer (2000)</b> and proved by <b>Gilbert &amp; Lynch (2002)</b>.</div>
+    <div class="def"><span class="tag">📌 The CAP theorem</span>
+      A distributed data system can guarantee <b>at most two</b> of these three at once:
+      <b>Consistency (C)</b> — every read returns the most recent write (all nodes see the same data);
+      <b>Availability (A)</b> — every request to a non-failed node gets a response (maybe not the latest);
+      <b>Partition tolerance (P)</b> — it keeps working even when the network drops/delays messages between
+      nodes.</div>
+    <div class="hook"><span>In the real world <b>network partitions are inevitable</b>, so <b>P is
+      mandatory</b> — CAP collapses to a binary choice: when a partition hits, do you keep <b>Consistency</b>
+      (refuse stale answers → <b>CP</b>) or <b>Availability</b> (answer with maybe-stale data → <b>AP</b>)?</span></div>
+    <div class="facts"><span class="tag">Hard facts — where real systems sit</span>
+    <table><tbody>
+      <tr><td><b>CA</b></td><td>PostgreSQL, MySQL — single-node/tightly-coupled; can't tolerate true partitions</td></tr>
+      <tr><td><b>CP</b></td><td>Apache HBase, ZooKeeper — pick consistency; may go unavailable rather than serve stale data</td></tr>
+      <tr><td><b>AP</b></td><td>Apache Cassandra, Amazon DynamoDB — pick availability; always respond, eventual consistency</td></tr>
+    </tbody></table></div>
+    <div class="tip"><span class="tag">🎯 Exam tip</span>
+      CAP "Consistency" ≠ ACID "Consistency". CAP-C is <b>linearisability</b> (every read sees the latest
+      write); ACID-C is about preserving database invariants. Examiners test this distinction.</div>
+  </section>
+
+  <section id="w1-batchstream">
+    <h2><span class="kicker">Week 1 · two processing paradigms</span>Batch vs stream processing</h2>
+    <div class="def"><span class="tag">📌 The two models</span>
+      <b>Batch</b> processes a <b>bounded, already-stored</b> dataset in one big job — <b>high throughput,
+      reproducible, simple fault recovery</b> (re-run from checkpoint), but <b>latency in hours</b>.
+      <b>Stream</b> processes an <b>unbounded, continuously-arriving</b> sequence record-by-record —
+      <b>low latency (ms–s)</b>, but <b>stateful</b> and complex (out-of-order data, exactly-once semantics).</div>
+    <table>
+      <tr><th>Attribute</th><th>Batch</th><th>Stream</th></tr>
+      <tr><td>Data model</td><td>bounded, stored</td><td>unbounded, live events</td></tr>
+      <tr><td>Latency</td><td>minutes–hours</td><td>milliseconds–seconds</td></tr>
+      <tr><td>Throughput</td><td>very high</td><td>moderate (per-event overhead)</td></tr>
+      <tr><td>Fault recovery</td><td>re-run from checkpoint</td><td>exactly-once semantics</td></tr>
+      <tr><td>Typical tools</td><td>Hadoop MapReduce, Hive, Spark</td><td>Kafka, Flink, Spark Streaming</td></tr>
+      <tr><td>Use cases</td><td>ETL, ML training, billing</td><td>fraud detection, monitoring, alerts</td></tr>
+    </table>
+    <div class="hook"><span>Use <b>stream</b> when the value of a response <b>decays with time</b> (block a
+      stolen card before the next swipe). Use <b>batch</b> when you need a complete, reproducible pass
+      (nightly billing). <b>Lambda</b> (Marz 2011) runs both layers; <b>Kappa</b> (Kreps 2014) replays the
+      event log through the stream path.</span></div>
+  </section>
+
+  <!-- ==================== WEEK 2 · DATA INTEGRATION ==================== -->
+  <section id="w2-silos">
+    <h2><span class="kicker">Week 2 · the core problem</span>Data silos &amp; what integration is</h2>
+    <div class="why"><span class="tag">Why we care</span>
+      Big organisations are <b>data-rich but insight-poor</b>. Data piles up in <b>data silos</b> —
+      independent systems built by separate teams, each with its own schema, keys and format. A Forrester
+      survey found <b>73% of enterprise data is never analysed</b>, and engineers spend <b>60–80% of project
+      time</b> just preparing/integrating data. The barrier isn't storage — it's <b>integration complexity</b>.</div>
+    <div class="def"><span class="tag">📌 Definition — data integration</span>
+      Given heterogeneous, <b>autonomous</b> sources (each with its own schema), <b>data integration</b>
+      provides a <b>unified query interface</b> over a single <b>mediated (global) schema</b>, so users get one
+      coherent view regardless of which source the data came from. "Autonomous" = the integration layer can
+      only <em>read</em> sources, not change them.</div>
+    <div class="def"><span class="tag">📌 The 3 core operations</span>
+      <b>1. Schema mapping</b> — define the correspondence between each source's fields and the global schema.
+      <b>2. Data exchange</b> — actually materialise/transform source data into the global schema (this is the
+      "Transform" of ETL). <b>3. Entity resolution</b> — decide whether two records refer to the <b>same
+      real-world entity</b> when there's no shared key.</div>
+    <div class="hook"><span>Map the <b>schema</b>, exchange the <b>data</b>, resolve the <b>entity</b>. The
+      first says which columns match, the second moves the values, the third matches the rows.</span></div>
+  </section>
+
+  <section id="w2-heterogeneity">
+    <h2><span class="kicker">Week 2 · the four barriers</span>The 4 dimensions of heterogeneity</h2>
+    <div class="why"><span class="tag">Why we care</span>
+      Heterogeneity is <em>the</em> barrier to integration, and it comes in <b>four</b> flavours. A pipeline
+      that fixes only some produces <b>silently wrong</b> results. "Name and give an example of each" is a
+      classic question.</div>
+    <table>
+      <tr><th>Dimension</th><th>What differs</th><th>Example</th></tr>
+      <tr><td><b>Structural</b></td><td>different table/column structure or names</td><td><code>cust_id</code> vs <code>customer_number</code> vs <code>contact_id</code>; address as 1 string vs 4 columns</td></tr>
+      <tr><td><b>Semantic</b> (most dangerous)</td><td>same name, different meaning</td><td><code>price</code> = wholesale in one system, retail in another; <code>date</code> = order vs ship vs invoice date</td></tr>
+      <tr><td><b>Syntactic</b></td><td>same data, different encoding/format</td><td><code>2024-03-15</code> vs <code>15/03/2024</code>; <code>true</code> vs <code>1</code> vs <code>"Y"</code>; UTF-8 vs EBCDIC</td></tr>
+      <tr><td><b>Scale / granularity</b></td><td>different units or resolutions</td><td>monthly vs daily figures; °C vs °F; metre vs 10-metre resolution</td></tr>
+    </table>
+    <div class="confusion"><span class="tag">⚠️ Loud vs silent failures</span>
+      <b>Structural</b> and <b>syntactic</b> conflicts fail <b>loudly</b> (column-not-found, parse error).
+      <b>Semantic</b> and <b>granularity</b> conflicts fail <b>silently</b> — the pipeline runs, output looks
+      fine, but every "price" answer is wrong. Silent errors are the dangerous ones.</div>
+  </section>
+
+  <section id="w2-entity">
+    <h2><span class="kicker">Week 2 · matching records</span>Entity resolution — blocking &amp; similarity</h2>
+    <div class="def"><span class="tag">📌 Definition</span>
+      <b>Entity resolution</b> (aka record linkage / deduplication) links records from different sources that
+      refer to the <b>same real-world entity</b>, using only their attribute values — <b>no common key</b>.</div>
+    <div class="why"><span class="tag">Why the naïve way fails</span>
+      Comparing every record against every other is <b>O(n²)</b>. 10 million × 10 million = <b>100 trillion</b>
+      comparisons — at 1 billion/second that's <b>&gt;27 hours</b>. Infeasible at scale.</div>
+    <div class="def"><span class="tag">📌 Blocking — the fix</span>
+      <b>Blocking</b> partitions records into <b>blocks</b> by a cheap key (e.g. first 3 letters of surname +
+      birth year) and only compares pairs <b>within the same block</b>. Balance: too aggressive a key splits
+      true matches apart (hurts <b>recall</b>); too lenient and blocks are huge (hurts <b>efficiency</b>).</div>
+    <h3>Similarity functions (score each candidate pair 0–1)</h3>
+    <div class="fml"><span class="lbl">Jaccard</span>
+      J(T₁,T₂) = <span class="frac"><span class="n">|T₁ ∩ T₂|</span><span class="d">|T₁ ∪ T₂|</span></span>
+      &nbsp;— on token sets; robust to word reordering (good for names/addresses)</div>
+    <div class="fml"><span class="lbl">Edit similarity</span>
+      σ = 1 − <span class="frac"><span class="n">edit_distance(s₁,s₂)</span><span class="d">max(|s₁|,|s₂|)</span></span>
+      &nbsp;— Levenshtein; handles typos &amp; abbreviations ("Corp." vs "Corporation")</div>
+    <div class="hook"><span>A <b>composite</b> score = weighted sum of per-attribute similarities (weights sum
+      to 1); declare a <b>match</b> if it clears a threshold <b>θ</b>. θ trades precision vs recall — a
+      business decision, not just engineering.</span></div>
+  </section>
+
+  <section id="w2-quality">
+    <h2><span class="kicker">Week 2 · is the data trustworthy?</span>Data quality, missing values &amp; provenance</h2>
+    <div class="def"><span class="tag">📌 The 6 dimensions of data quality (Wang &amp; Strong, 1996)</span>
+      <b>Accuracy</b> (values match reality) · <b>Completeness</b> (no critical nulls) · <b>Consistency</b>
+      (no contradictions within/across sources) · <b>Timeliness</b> (current enough) · <b>Validity</b>
+      (conforms to formats/ranges) · <b>Uniqueness</b> (no duplicates).</div>
+    <div class="hook"><span>Six to memorise: <b>A-C-C-T-V-U</b> — Accuracy, Completeness, Consistency,
+      Timeliness, Validity, Uniqueness.</span></div>
+    <h3>Missing values — three mechanisms</h3>
+    <div class="def"><span class="tag">📌 MCAR / MAR / MNAR</span>
+      <b>MCAR</b> (Missing Completely At Random) — missingness independent of everything; mean/median
+      imputation is valid. <b>MAR</b> (Missing At Random) — missingness depends on <em>observed</em> values
+      (older customers skip email). <b>MNAR</b> (Missing Not At Random) — missingness depends on the
+      <em>missing value itself</em> (low earners hide income); mean imputation here <b>introduces bias</b>.</div>
+    <h3>Provenance &amp; lineage</h3>
+    <div class="def"><span class="tag">📌 Definition</span>
+      <b>Data provenance</b> is the documented record of where a value came from and what was done to it;
+      <b>lineage</b> is that dependency graph, operationalised. Required by law — <b>GDPR</b> (EU, 2018) and
+      <b>HIPAA</b> (US healthcare). Tools: <b>Apache Atlas, OpenLineage, dbt</b>.</div>
+    <div class="tip"><span class="tag">🎯 Exam tip</span>
+      Noise = random errors; an <b>outlier</b> may be noise <em>or</em> a genuine rare event — only domain
+      knowledge tells them apart. Inconsistency = same fact represented differently ("New York" vs "NYC").</div>
+  </section>
+
+  <section id="w2-etl">
+    <h2><span class="kicker">Week 2 · moving the data</span>ETL vs ELT &amp; the integration stack</h2>
+    <div class="def"><span class="tag">📌 ETL vs ELT — it's the order of two letters</span>
+      <b>ETL (Extract → Transform → Load):</b> transform in a staging area <b>before</b> loading; the
+      warehouse enforces a strict <b>schema-on-write</b>. High quality at target, but <b>rigid</b>.
+      <b>ELT (Extract → Load → Transform):</b> load <b>raw</b> data into a data lake first, transform
+      <b>on demand</b> at query time (schema-on-read). Flexible, cheap storage, supports schema evolution —
+      the modern default.</div>
+    <div class="analogy"><span class="tag">💡 Think of it like…</span>
+      <b>ETL</b> = cook the meal, then put it in the fridge (only finished dishes stored). <b>ELT</b> = stock
+      the fridge with raw ingredients, cook to order (raw always kept, prepare per request).</div>
+    <table>
+      <tr><th></th><th>ETL</th><th>ELT</th></tr>
+      <tr><td>Transform timing</td><td>before load (staging)</td><td>after load, at query time</td></tr>
+      <tr><td>Target schema</td><td>strict (schema-on-write)</td><td>flexible (schema-on-read)</td></tr>
+      <tr><td>Raw data kept?</td><td>no</td><td>yes (always available)</td></tr>
+      <tr><td>Schema evolution</td><td>difficult</td><td>easy</td></tr>
+      <tr><td>Tools</td><td>Informatica, Talend, SSIS</td><td>Spark, dbt, Airbyte, Fivetran</td></tr>
+    </table>
+    <div class="confusion"><span class="tag">⚠️ ELT ≠ skip transformation</span>
+      ELT <b>defers</b> transformation, it doesn't remove it. Raw lake data still needs cleaning/enrichment
+      (usually via <b>dbt</b>) — skip it and you get a <b>"data swamp"</b> nobody trusts.</div>
+    <div class="facts"><span class="tag">Hard facts — the integration tool ecosystem</span>
+    <table><tbody>
+      <tr><td>Apache <b>Sqoop</b></td><td>bulk batch transfer RDBMS ↔ HDFS</td></tr>
+      <tr><td>Apache <b>Flume</b></td><td>log sources → HDFS</td></tr>
+      <tr><td>Apache <b>Kafka</b></td><td>real-time event bus; durable, replayable</td></tr>
+      <tr><td><b>Airbyte / Fivetran</b></td><td>no-code connectors for SaaS APIs</td></tr>
+      <tr><td>Apache <b>Spark / dbt</b></td><td>large-scale / SQL transformation</td></tr>
+      <tr><td>Apache <b>Atlas</b></td><td>metadata, lineage, governance</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <!-- ==================== WEEK 3 · DISTRIBUTED FILE SYSTEMS (GFS & HDFS) ==================== -->
   <section id="intro">
     <h2><span class="kicker">Start here</span>Why do we even need a "distributed" file system?</h2>
     <p>Your laptop has one disk. It stores files, you open them — done. So why did Google need to invent
@@ -488,11 +785,193 @@ body.rot .rotexit{display:inline-flex;position:fixed;z-index:80;top:9px;right:9p
     — outweighs it. That elasticity is why cloud storage largely replaced on-prem HDFS for new builds.</p>
   </section>
 
+  <!-- ==================== WEEK 4 · MAPREDUCE & THE HADOOP STACK ==================== -->
+  <section id="w4-mapreduce">
+    <h2><span class="kicker">Week 4 · processing the data</span>MapReduce — the programming model</h2>
+    <div class="why"><span class="tag">Why we care</span>
+      Week 3 stored petabytes; now we must <b>process</b> them. The old tools break: <b>SQL</b> assumes a
+      schema-on-write on one server (a full scan of 1 PB at 200 MB/s ≈ <b>57 days</b>); <b>MPI</b> makes the
+      programmer handle everything and has <b>no fault tolerance</b> (one failed process ⇒ restart the whole
+      job — fatal on a cluster with daily failures). <b>MapReduce</b> (Google, <b>Dean &amp; Ghemawat,
+      2004</b>) fixes both: you write two simple functions, the framework parallelises, schedules, and
+      recovers from failures automatically.</div>
+    <div class="def"><span class="tag">📌 The two functions (memorise the signatures)</span>
+      <b>Map:</b> (k₁, v₁) → list(k₂, v₂) — processes each record independently, emits intermediate pairs.<br>
+      <b>Reduce:</b> (k₂, list(v₂)) → list(k₃, v₃) — receives all values for one key, aggregates them.<br>
+      Between them the framework runs the <b>shuffle &amp; sort</b> — groups all pairs by key and sorts them.
+      You never write shuffle logic.</div>
+    <div class="example"><span class="tag">✍️ The canonical example — word count</span>
+      <b>Map</b>("doc1", "to be or not to be") → (to,1)(be,1)(or,1)(not,1)(to,1)(be,1). <b>Shuffle &amp;
+      sort</b> groups: (be,[1,1]) (not,[1]) (or,[1]) (to,[1,1]). <b>Reduce</b>(be,[1,1]) → (be,2). Each map
+      task runs in parallel on its own split; each distinct word's counts go to one reduce task.</div>
+    <div class="hook"><span><b>Map = transform each record independently; Reduce = aggregate everything that
+      shares a key.</b> The restrictive two-function shape is exactly what lets the framework handle all the
+      distribution and failures for you.</span></div>
+  </section>
+
+  <section id="w4-combiner">
+    <h2><span class="kicker">Week 4 · two helpers</span>The Combiner and the Partitioner</h2>
+    <div class="def"><span class="tag">📌 Combiner — a local mini-reducer</span>
+      A <b>Combiner</b> runs <b>right after Map, on the same node</b>, pre-aggregating a map task's output
+      <em>before</em> it crosses the network. In word count it turns 50,000 ("the",1) pairs into one
+      ("the",50000). It only works when the reduce is <b>commutative &amp; associative</b> — <b>sum, count,
+      min, max</b> are fine; <b>average is NOT</b> (a local average can't be combined). Cuts shuffle traffic
+      by <b>80–95%</b> for aggregations.</div>
+    <div class="def"><span class="tag">📌 Partitioner — which reducer gets the key</span>
+      The <b>Partitioner</b> decides which reduce task receives each key. The default <b>HashPartitioner</b>:
+      <b>reducer_id(k) = hash(k) mod R</b> (R = number of reducers). It spreads keys evenly to prevent
+      <b>reducer skew</b> (one overloaded reducer bottlenecking the job). Sorting jobs use a custom
+      range partitioner instead.</div>
+    <div class="hook"><span><b>Combiner</b> shrinks the data (less network); <b>Partitioner</b> routes the
+      data (which reducer). Combiner = optimisation; Partitioner = distribution.</span></div>
+  </section>
+
+  <section id="w4-pipeline">
+    <h2><span class="kicker">Week 4 · end to end</span>The execution pipeline &amp; fault tolerance</h2>
+    <div class="def"><span class="tag">📌 The full pipeline</span>
+      <b>Input splits</b> — input is divided into splits aligned to <b>128 MB HDFS blocks</b>; <b>one Map
+      task per split</b>. <b>InputFormat</b> turns bytes into (k,v) pairs (TextInputFormat → (byte-offset,
+      line)). <b>Scheduling with data locality</b> — the scheduler places each map task on a node that holds
+      a replica of its block (<b>task-local → rack-local → off-rack</b>); local read 100–300 MB/s vs ~125
+      MB/s off-rack. <b>Shuffle &amp; sort</b> — map output spills from a 100 MB buffer (at 80% full) to
+      sorted files; reducers fetch and merge-sort them.</div>
+    <div class="def"><span class="tag">📌 Fault tolerance — deterministic re-execution</span>
+      Every task is <b>deterministic &amp; idempotent</b>: same input ⇒ same output. The master watches
+      <b>heartbeats</b>; if a task is silent past the timeout (default <b>10 min</b>) it's declared failed and
+      <b>re-run on another node</b> — HDFS's <b>3 replicas</b> guarantee the input is still reachable.</div>
+    <div class="tip"><span class="tag">🎯 Exam tip — speculative execution</span>
+      For a <b>straggler</b> (a slow-but-not-failed task on a hot/degraded machine), the framework launches a
+      <b>backup copy on another node</b>; whichever finishes first wins, the other is killed. Correctness is
+      safe (determinism), and it can cut completion time by ~40%.</div>
+  </section>
+
+  <section id="w4-pig-hive">
+    <h2><span class="kicker">Week 4 · higher-level tools</span>Pig &amp; Hive</h2>
+    <div class="why"><span class="tag">Why we care</span>
+      Raw MapReduce is powerful but <b>verbose</b> (a join = hundreds of lines of Java). Pig and Hive are
+      higher-level layers that <b>compile down to MapReduce</b>.</div>
+    <div class="def"><span class="tag">📌 Apache Pig — dataflow scripting</span>
+      <b>Pig Latin</b> describes a DAG of transformations that the Pig compiler turns into MapReduce jobs.
+      Key operators: <b>LOAD</b> (read), <b>FILTER</b> (select rows), <b>FOREACH…GENERATE</b> (project, like
+      SQL SELECT), <b>GROUP</b>, <b>JOIN</b>, <b>ORDER BY</b>, <b>STORE</b> (write). Great for multi-step ETL
+      and ad-hoc exploration; high latency (30–60 s job startup).</div>
+    <div class="def"><span class="tag">📌 Apache Hive — SQL-on-Hadoop</span>
+      <b>HiveQL</b> (SQL dialect) compiles to MapReduce/Tez/Spark — built at <b>Facebook, open-sourced 2008</b>.
+      The <b>Metastore</b> (a MySQL/Postgres DB) maps SQL table &amp; column names to <b>HDFS paths</b> and
+      formats — it's the source of truth for every query.</div>
+    <div class="hook"><span><b>Partitioning</b> stores each partition value in its own HDFS sub-directory, so
+      a query filtering on it does <b>partition pruning</b> — 365 daily partitions, query one day ⇒ read
+      1/365 of the data. <b>Bucketing</b> hashes rows into a fixed number of files within a partition,
+      speeding up equi-joins and sampling.</span></div>
+  </section>
+
+  <section id="w4-hbase">
+    <h2><span class="kicker">Week 4 · real-time on Hadoop</span>Apache HBase</h2>
+    <div class="why"><span class="tag">Why we care</span>
+      MapReduce, Pig and Hive are all <b>batch</b> (minutes–hours). Some apps need to read/write a single
+      record <b>by key in milliseconds</b> (messaging, profiles, fraud scoring). Plain HDFS gives 50–200 ms
+      per op. <b>HBase</b> — modelled on Google's <b>Bigtable (Chang et al., 2006)</b> — gives random
+      read/write at <b>&lt;10 ms</b> on top of HDFS.</div>
+    <div class="def"><span class="tag">📌 The HBase data model — 4 coordinates to a cell</span>
+      An HBase table is a sorted map: <b>(row key, column family : qualifier, timestamp) → value</b>.
+      <b>Row key</b> — arbitrary bytes, table is physically sorted by it (great for range scans).
+      <b>Column family</b> — fixed group of columns stored together on disk. <b>Column qualifier</b> — a
+      dynamic column name created on the fly. <b>Timestamp</b> — each cell keeps multiple versions.</div>
+    <div class="def"><span class="tag">📌 Architecture (LSM-tree)</span>
+      <b>HMaster</b> coordinates (assigns regions, schema changes) — <b>not</b> in the data path.
+      <b>RegionServers</b> serve all reads/writes. A write goes: <b>WAL</b> (write-ahead log for durability)
+      → <b>MemStore</b> (in-memory sorted map) → flushed to an immutable <b>HFile</b> on HDFS. Reads merge
+      MemStore + HFiles; <b>compaction</b> periodically merges HFiles.</div>
+    <div class="tip"><span class="tag">🎯 Exam tip</span>
+      HBase read latency is <b>&lt;10 ms</b>, NOT the 50–200 ms of raw HDFS — because recent data is served
+      from the in-memory MemStore/block cache, and Bloom filters skip HFiles that can't hold the key.</div>
+  </section>
+
+  <section id="w4-tools">
+    <h2><span class="kicker">Week 4 · which tool?</span>Choosing from the Hadoop stack</h2>
+    <div class="why"><span class="tag">Why we care</span>
+      "Given this problem, which Hadoop tool?" is a near-certain question. Pick by <b>access pattern</b> and
+      <b>latency</b>.</div>
+    <div class="facts"><span class="tag">Hard facts — tool selection matrix</span>
+    <table><tbody>
+      <tr><td><b>Raw MapReduce</b></td><td>custom/iterative algorithms, tight control · <b>hours</b> · Java · not for interactive queries</td></tr>
+      <tr><td><b>Apache Pig</b></td><td>multi-step ETL, ad-hoc exploration · hours · Pig Latin script · not for SQL analysts</td></tr>
+      <tr><td><b>Apache Hive</b></td><td>reporting/BI, warehouse SQL · <b>minutes (batch)</b> · HiveQL · not for sub-second or random reads</td></tr>
+      <tr><td><b>Apache HBase</b></td><td>random read/write, real-time lookups · <b>&lt;10 ms</b> · Java/REST API · not for full scans/complex analytics</td></tr>
+    </tbody></table></div>
+    <div class="hook"><span>SQL &amp; reporting → <b>Hive</b>. Scripted multi-step ETL → <b>Pig</b>. A weird
+      custom algorithm → <b>raw MapReduce</b>. Millisecond key lookups → <b>HBase</b>. All four share the same
+      HDFS underneath.</span></div>
+  </section>
+
   <!-- PRACTICE -->
   <section id="practice" class="practice">
     <h2><span class="kicker">Test yourself</span>Practice — theory &amp; math (fully worked)</h2>
-    <p>Good papers mix concepts and calculation. Cover the answer, attempt it, then reveal the full working.</p>
+    <p>Good papers mix concepts and calculation. Cover the answer, attempt it, then reveal the full working.
+    The paper is <b>factual</b> — drill the fill-in-the-blanks first (cheapest marks), then the short answers,
+    then the worked Week-3 problems below.</p>
 
+    <h3 style="margin-top:24px">Weeks 1–4 · Fill in the blanks <span class="badge b-th">recall</span></h3>
+    <details><summary><span class="qid">F1</span> The 3Vs of big data are Volume, Velocity and ___.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>Variety</b> — the 5Vs add <b>Veracity</b> and <b>Value</b>.</div></details>
+    <details><summary><span class="qid">F2</span> Structured data uses schema-on-___, semi-structured uses schema-on-___.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>write</b> · <b>read</b></div></details>
+    <details><summary><span class="qid">F3</span> Unstructured data is roughly ___% of the global datasphere.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>70–80%</b> (structured ~20%, semi-structured ~10%).</div></details>
+    <details><summary><span class="qid">F4</span> Adding more commodity machines to a cluster is ___ scaling; adding power to one machine is ___ scaling.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>horizontal</b> (scale out) · <b>vertical</b> (scale up)</div></details>
+    <details><summary><span class="qid">F5</span> The CAP theorem says a distributed system can guarantee at most ___ of Consistency, Availability, Partition tolerance.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>two</b>. Since partitions are unavoidable, real systems choose <b>CP</b> or <b>AP</b>.</div></details>
+    <details><summary><span class="qid">F6</span> HBase and ZooKeeper are ___ systems; Cassandra and DynamoDB are ___ systems.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>CP</b> · <b>AP</b></div></details>
+    <details><summary><span class="qid">F7</span> The four dimensions of heterogeneity are structural, semantic, syntactic and ___.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>scale / granularity</b>. Semantic &amp; granularity failures are the <b>silent</b> ones.</div></details>
+    <details><summary><span class="qid">F8</span> Making entity resolution tractable by only comparing records in the same group is called ___.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>blocking</b> — it avoids the O(n²) all-pairs comparison.</div></details>
+    <details><summary><span class="qid">F9</span> The six data-quality dimensions are Accuracy, Completeness, Consistency, Timeliness, Validity and ___.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>Uniqueness</b></div></details>
+    <details><summary><span class="qid">F10</span> ETL transforms ___ loading; ELT transforms ___ loading.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>before</b> · <b>after</b> (on demand, at query time)</div></details>
+    <details><summary><span class="qid">F11</span> The MapReduce Map signature is (k₁,v₁) → ___.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>list(k₂, v₂)</b>; Reduce is (k₂, list(v₂)) → list(k₃, v₃).</div></details>
+    <details><summary><span class="qid">F12</span> A ___ is a local mini-reducer that cuts shuffle traffic; it only works for commutative-associative operations.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>Combiner</b> (works for sum/count/min/max, not average).</div></details>
+    <details><summary><span class="qid">F13</span> The default MapReduce partitioner computes reducer_id = ___ mod R.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>hash(key)</b></div></details>
+    <details><summary><span class="qid">F14</span> Hive maps SQL table names to HDFS paths using the ___.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>Metastore</b> (a MySQL/Postgres database).</div></details>
+    <details><summary><span class="qid">F15</span> An HBase cell is identified by row key, column family : qualifier, and ___.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>timestamp</b> (each cell keeps multiple versions).</div></details>
+    <details><summary><span class="qid">F16</span> An HBase write goes WAL → ___ → HFile.<span class="badge b-th">fill</span></summary>
+      <div class="ans"><b>MemStore</b> (in-memory sorted map). This is the LSM-tree write path.</div></details>
+
+    <h3 style="margin-top:28px">Weeks 1–4 · Short questions <span class="badge b-th">recall</span></h3>
+    <details><summary><span class="qid">S1</span> State the 3Vs of big data, with one production example each.<span class="badge b-th">short</span></summary>
+      <div class="ans"><b>Volume</b> (scale — Meta ~500 TB/day), <b>Velocity</b> (speed — Visa ~24,000 tx/s), <b>Variety</b> (diversity — CSV + JSON + images + video together). The 5Vs add <b>Veracity</b> (quality) and <b>Value</b> (business utility).</div></details>
+    <details><summary><span class="qid">S2</span> State the CAP theorem and explain each property.<span class="badge b-th">short</span></summary>
+      <div class="ans">At most two of three: <b>Consistency</b> (every read returns the most recent write), <b>Availability</b> (every request to a live node gets a response), <b>Partition tolerance</b> (keeps working when the network drops messages). As partitions are unavoidable, systems choose CP or AP.</div></details>
+    <details><summary><span class="qid">S3</span> Classify as structured/semi-structured/unstructured: (a) a PostgreSQL table, (b) a JSON API response, (c) an MP3 recording.<span class="badge b-th">short</span></summary>
+      <div class="ans">(a) <b>Structured</b> (rigid schema, SQL). (b) <b>Semi-structured</b> (self-describing keys, schema-on-read). (c) <b>Unstructured</b> (raw signal, needs ML/speech processing). JSON is <b>not</b> unstructured.</div></details>
+    <details><summary><span class="qid">S4</span> Differentiate batch from stream processing.<span class="badge b-th">short</span></summary>
+      <div class="ans"><b>Batch</b> works on a bounded, stored dataset — high throughput, reproducible, but latency in hours (Hadoop/Hive/Spark). <b>Stream</b> processes unbounded, continuously-arriving events with millisecond–second latency but is stateful and complex (Kafka/Flink). Use stream when the value of a response decays with time.</div></details>
+    <details><summary><span class="qid">S5</span> What is the data silo problem, and what three operations does integration require?<span class="badge b-th">short</span></summary>
+      <div class="ans">Data silos are independent systems with incompatible schemas/keys, leaving an organisation data-rich but insight-poor. Integration needs <b>schema mapping</b> (field correspondences), <b>data exchange</b> (materialise into the global schema), and <b>entity resolution</b> (link records for the same real-world entity).</div></details>
+    <details><summary><span class="qid">S6</span> Distinguish structural from semantic heterogeneity, with an example.<span class="badge b-th">short</span></summary>
+      <div class="ans"><b>Structural</b> = different column names/structures (<code>cust_id</code> vs <code>contact_id</code>) — fails loudly. <b>Semantic</b> = same name, different meaning (<code>price</code> = wholesale vs retail) — fails <b>silently</b> and is far more dangerous.</div></details>
+    <details><summary><span class="qid">S7</span> Why is naïve entity resolution infeasible, and how does blocking help?<span class="badge b-th">short</span></summary>
+      <div class="ans">All-pairs comparison is <b>O(n²)</b> (10M×10M = 100 trillion, &gt;27 h). <b>Blocking</b> partitions records by a cheap key and only compares within a block, slashing the candidate space while keeping most true matches (recall).</div></details>
+    <details><summary><span class="qid">S8</span> Compare ETL and ELT.<span class="badge b-th">short</span></summary>
+      <div class="ans"><b>ETL</b> transforms in staging <b>before</b> loading → high quality, strict schema-on-write, but rigid. <b>ELT</b> loads raw into a data lake, transforms <b>on demand</b> (schema-on-read) → flexible, cheap storage, supports schema evolution. ELT still needs transformation (via dbt) or it becomes a "data swamp".</div></details>
+    <details><summary><span class="qid">S9</span> Explain the roles of the Combiner and Partitioner in MapReduce.<span class="badge b-th">short</span></summary>
+      <div class="ans">The <b>Combiner</b> is a local mini-reducer that pre-aggregates map output before the shuffle (cuts network traffic 80–95%), valid only for commutative-associative reduces (sum/count, not average). The <b>Partitioner</b> assigns each key to a reducer (default hash(k) mod R) to spread load and avoid reducer skew.</div></details>
+    <details><summary><span class="qid">S10</span> How does MapReduce achieve fault tolerance?<span class="badge b-th">short</span></summary>
+      <div class="ans">Tasks are <b>deterministic &amp; idempotent</b>. The master detects a dead task via <b>heartbeat timeout</b> and re-runs it on another node; HDFS's 3 replicas guarantee the input is still available. <b>Speculative execution</b> launches backup copies of slow stragglers.</div></details>
+    <details><summary><span class="qid">S11</span> When would you use Hive, Pig, raw MapReduce, and HBase?<span class="badge b-th">short</span></summary>
+      <div class="ans"><b>Hive</b> — SQL reporting/BI (minutes). <b>Pig</b> — scripted multi-step ETL. <b>Raw MapReduce</b> — custom/iterative algorithms needing tight control. <b>HBase</b> — millisecond random read/write by key. All share one HDFS layer.</div></details>
+    <details><summary><span class="qid">S12</span> What is partition pruning in Hive?<span class="badge b-th">short</span></summary>
+      <div class="ans">A partitioned table stores each partition value in its own HDFS sub-directory; a query filtering on the partition column reads only the matching directories and skips the rest. 365 daily partitions, query one day ⇒ read ~1/365 of the data.</div></details>
+
+    <h3 style="margin-top:28px">Week 3 · GFS &amp; HDFS — theory &amp; math <span class="badge b-math">worked</span></h3>
     <details><summary><span class="qid">T1</span> Why can't a conventional file system handle a 500 PB dataset? Give three reasons.<span class="badge b-th">theory</span></summary>
       <div class="ans"><b>Capacity</b> — one machine's disk can't hold it and there's no way to scale out.
       <b>Throughput</b> — reading it through one machine is impossibly slow (1 PB off one disk ≈ 230 days).
